@@ -17,6 +17,16 @@ export async function POST(request: NextRequest) {
     const uid = decodedToken.uid;
     const userDoc = await adminDb.collection("users").doc(uid).get();
     const userData = userDoc.data();
+    const orgDoc = await adminDb.collection("organizations").doc(userData?.orgId).get();
+    const orgData = orgDoc.data();
+
+
+    if(!orgData){
+      return NextResponse.json(
+        { error: "No registered organization for this user account" },
+        { status: 404 }
+      );
+    }
 
     if(!userData){
       return NextResponse.json(
@@ -44,6 +54,14 @@ export async function POST(request: NextRequest) {
     const userRole = userData.role ? String(userData.role) : "user";
     
     cookieStore.set("userRole", userRole, {
+      maxAge: expiresIn,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    });
+
+    const subscriptionTier = orgData.subscriptionTier ? String(orgData.subscriptionTier) : "basic";
+    cookieStore.set("subscriptionTier", subscriptionTier, {
       maxAge: expiresIn,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

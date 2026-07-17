@@ -26,6 +26,7 @@ interface TermData {
 interface Organization {
   id: string;
   name: string;
+  subscriptionTier: string;
   acronym: string;
   outstandingAmount: number;
   statusStates?: Array<"unpaid" | "pending" | "rejected" | "verified">;
@@ -222,9 +223,9 @@ export default function OrganizationSelectionPage({
                       <button
                         key={org.id}
                         onClick={() => handleOrgSelect(org.id)}
-                        disabled={!isPayable}
+                        disabled={!isPayable || org.subscriptionTier !== "plus"}
                         className={`w-full text-left p-3 sm:p-4 rounded-lg border-2 transition-all ${
-                          isPayable
+                          isPayable && org.subscriptionTier === "plus"
                             ? "hover:border-[#1B5E20]/50 hover:bg-[#1B5E20]/5"
                             : "opacity-70 cursor-not-allowed"
                         } ${
@@ -269,6 +270,11 @@ export default function OrganizationSelectionPage({
                                 );
                               });
                             })()}
+                            {org.subscriptionTier !== "plus" && (
+                              <Badge variant="outline" className="text-[10px] sm:text-xs shrink-0">
+                                Plus Subscription Required
+                              </Badge>
+                            )}
                           </div>
                           {org.description && (
                             <p className="mb-2 text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">

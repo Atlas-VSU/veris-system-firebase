@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 const publicRoutes = ["/login", "/"];
 const basicRoutes = ["/org-dashboard", "/org-events", "/org-members"];
-const plusRoutes = ["/org-dashboard", "/org-events", "/org-members", "/org-fines", "/org-fees", "/org-payments"];
+const plusRoutes = [ "/org-fines", "/org-fees", "/org-payments", "org-clearance"]
  
 
 export function middleware(request: NextRequest) {
@@ -39,7 +39,7 @@ const isMaintenance = process.env.MAINTENANCE_MODE === "true";
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (isAuthenticated && plusRoutes && subscriptionTier !== "plus") {
+  if (isAuthenticated && isPlusRoute && subscriptionTier !== "plus") {
     return NextResponse.redirect(new URL("/subscription-required", request.url));
   }
 

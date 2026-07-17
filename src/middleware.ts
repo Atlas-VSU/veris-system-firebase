@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 const publicRoutes = ["/login", "/"];
 const basicRoutes = ["/org-dashboard", "/org-events", "/org-members"];
-const plusRoutes = [ "/org-fines", "org-fees", "/org-payments", "org-clearance"]
+const plusRoutes = [ "/org-fines", "/org-fees", "/org-payments", "/org-clearance"]
  
 
 export function middleware(request: NextRequest) {

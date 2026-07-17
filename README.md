@@ -1,72 +1,109 @@
-# CORAL - Centralized Online Record for Attendance and Logging
-
+# VERIS Systems
+ 
 ## USSC Instance
-
-This is the CORAL deployment for the University Student Supreme Council (USSC). CORAL is a student attendance management system designed for tracking participation in intramurals, faction events, and other academic activities. This platform provides an approach to record, monitor, and analyze student attendance data in real-time.
-
-## What is CORAL?
-
-CORAL (Centralized Online Record for Attendance and Logging) is a modern web-based application that allows organizers to efficiently manage attendance for university events, intramurals, and faction activities. The system eliminates the need for paper-based attendance tracking by providing digital tools for event creation, attendance recording, and data analysis.
-
-Built with responsiveness in mind, CORAL works seamlessly across desktop and mobile devices, making it accessible for organizers on the go.
-
+ 
+This is the VERIS deployment originally developed exclusively for the University Student Supreme Council (USSC) under the brand names USSC Connect and Surepay. VERIS is a commercial student attendance and organization management system developed by the **Veris Dev Team under FC-SSC**, initially built for tracking participation in intramurals, faction events, and other academic activities, with optional financial management for membership fees, fines, and clearance available as an expanded tier. This platform provides organizations a way to record, monitor, and analyze student attendance and financial data in real time.
+ 
+## What is VERIS?
+ 
+VERIS is a modern web-based application that allows organizations to efficiently manage attendance for university events, intramurals, and faction activities — with the option to also manage membership fees, fines, and clearance through the Plus tier. The system eliminates the need for paper-based attendance and financial tracking by providing digital tools for event creation, attendance recording, data analysis, and, in Plus, financial management.
+ 
+Built with responsiveness in mind, VERIS works seamlessly across desktop and mobile devices, making it accessible for organizers on the go.
+ 
+This release introduces several major additions:
+ 
+- **One Stop Shop Enrollment (OSSE):** A new self-registration flow built for USSC's Station, letting incoming freshmen register themselves directly into the system rather than requiring manual entry by organizers.
+- **Self-Registration for Upperclassmen:** The self-registration flow now also covers upperclassmen who were not yet registered in the system, closing a gap left by the original freshman-only rollout.
+- **Update Student Record:** A companion feature that lets students and organizers correct or update existing student records, keeping the database accurate as enrollment and personal details change over time.
+- **Multi-Semester Support:** Users can now navigate across different semester periods and view a student's clearance status and fines historically, rather than only for the current term.
+- **Multi-Account per Organization:** Organizations can now maintain multiple user accounts, making it possible to track actions and transactions by individual officer rather than a single shared login.
+OSSE, self-registration, and Update Student Record are available across **all tiers**, including Basic.
+ 
 ## Deployment
-
+ 
 A live demo of the system is available at [https://coral-ussc.vercel.app/]
-
+ 
 ## Version 1.2.1
-
+ 
 The latest release introduces significant UI/UX improvements, enhanced responsiveness, and better user experience across all devices. Key improvements include:
-
+ 
 - Responsive member card designs with both regular and compact views
 - Improved bulk import functionality with better mobile support
 - Enhanced authentication flow and navigation
 - Fixed layout issues in forms and dialogs
+- Self-registration (OSSE) for freshmen and upperclassmen
+- Update Student Record for maintaining accurate student data
+- Multi-semester navigation for clearance and fines
+- Multi-account support per organization
 - Comprehensive documentation updates
 
+## Pricing & Tiers
+ 
+VERIS Systems is offered commercially by the Veris Dev Team (FC-SSC) under two subscription tiers, priced per student per year.
+ 
+### Basic — Attendance Management
+
+**₱2 / student / year** · Minimum 100 students · ₱200/yr floor
+ 
+- ✓ Secure login
+- ✓ Dashboard with real-time attendance trends
+- ✓ Create & manage unlimited events
+- ✓ Real-time attendee tracking & timestamps
+- ✓ Quick check-in via student ID or name
+- ✓ Member directory with bulk import
+- ✓ Unlimited members & events
+- ✓ Self-registration for freshmen and upperclassmen (OSSE)
+- ✓ Update Student Record
+- ✓ Multi-semester navigation
+- ✓ Multi-account per organization
+
+### Plus — Basic + Financial Management *(Most Popular)*
+
+**₱3 / student / year** · Minimum 75 students · ₱225/yr floor
+ 
+Everything in Basic, plus:
+ 
+- ✓ Membership fees (semester, event, custom)
+- ✓ Define fine types & standard amounts
+- ✓ Assign fines manually to students
+- ✓ GCash payment verification workflow
+- ✓ Officer-side clearance management
+- ✓ Basic financial summaries & reports
+
 ### Key Features
-
+ 
 1. **Authentication**
-
    - Secure user login and registration system
    - Role-based access control with organization-specific permissions
    - Password recovery functionality
    - Optimized navigation for authenticated and non-authenticated users
+   - Multi-account support per organization, so individual officer actions can be tracked separately
    - (Note: External authentication providers like Google Sign-in will be added in future versions)
-
 2. **Dashboard**
-
    - At-a-glance attendance statistics and metrics
    - Interactive graphs displaying attendance trends
    - Quick access to recently created events
    - Recently added members/students list
    - Responsive design for all screen sizes
-
 3. **Event Management**
-
    - Create, update, and archive events
    - Configure event details: name, date, time-in/time-out ranges
    - Designate events as major or minor
    - Add descriptive notes and event information
    - Mobile-friendly event creation and management
-   - (Calendar view of upcoming and past events will be added in the fture)
-
+   - (Calendar view of upcoming and past events will be added in the future)
 4. **Attendee Tracking**
-
    - Comprehensive attendee lists for each event
    - Timestamp recording for check-in/check-out
    - Attendance status visualization
    - Exportable attendance records
    - Search and filter capabilities
-
 5. **Attendance Logging**
-
    - Simple check-in process via student ID or name
    - Real-time display of checked-in students
    - Search and filter functionality
    - Loading skeletons for improved user experience
    - (Coming soon: kiosk mode, self check-in, and QR scanning)
-
 6. **Member Management**
    - Bulk import functionality with downloadable templates
    - Manual member addition with responsive forms
@@ -74,36 +111,54 @@ The latest release introduces significant UI/UX improvements, enhanced responsiv
    - Pagination for large member lists
    - Multiple view options (standard and compact card layouts)
    - Mobile-optimized member management interface
+7. **Enrollment & Student Records**
+   - One Stop Shop Enrollment (OSSE): self-registration for incoming freshmen
+   - Self-registration extended to unregistered upperclassmen
+   - Update Student Record for correcting or maintaining accurate student data
+   - Available across all tiers, including Basic
+8. **Multi-Semester & Multi-Account**
+   - Navigate across semester periods to view historical clearance status and fines
+   - Multiple accounts per organization for per-officer transaction tracking
+   - Available across all tiers, including Basic
+9. **Financial Management** *(Plus tier only)*
+   - Configurable membership fees (semester, event-based, or custom)
+   - Custom fine types with standard amounts
+   - Manual fine assignment to individual students
+   - GCash payment verification workflow
+   - Officer-side clearance management
+   - Basic financial summaries and reports
 
 ## Recent Improvements
-
+ 
 ### UI/UX Enhancements
-
+ 
 - **Member List Component**: Completely redesigned with responsive card layouts, proper spacing, and pagination
 - **Bulk Import Dialog**: Fixed layout issues, improved mobile experience, and enhanced file upload section
 - **Navigation**: Improved header behavior based on authentication status
 - **Loading States**: Added skeleton loaders to replace static messages or content
+- **Self-Registration (OSSE)**: Added self-registration for freshmen and extended it to unregistered upperclassmen
+- **Update Student Record**: Added a dedicated feature for correcting and maintaining accurate student records
+- **Multi-Semester Navigation**: Added the ability to view clearance status and fines across different semester periods
+- **Multi-Account per Organization**: Added support for multiple user accounts per organization for better transaction tracking
 
 ### Component Architecture
-
+ 
 - Refactored large components into smaller, focused ones for better maintainability
 - Created reusable components for lists, cards, search, and pagination
 - Implemented proper responsive design with tailored mobile and desktop experiences
 
 ### Documentation
-
+ 
 - Comprehensive README with detailed project information
 - Clear feature documentation and system capabilities
 - Updated deployment information and technology stack details
 
 ## Coming Soon
-
-- Admin portal for system-wide configuration
+ 
 - QR code-based check-in system
 - Self-service attendance kiosk mode
 - Mobile application for on-the-go attendance tracking
 - Advanced reporting and analytics
-- Integration with university information systems
 
 ## Getting Started
 
@@ -245,12 +300,8 @@ src/
 
 ## Development Team
 
-CORAL is being developed as a student project aimed at improving attendance tracking systems for educational institutions. The system is built with scalability and extensibility in mind, allowing for future enhancements and integrations.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+VERIS System is developed and commercially maintained by the **Veris Dev Team** under **FC-SSC**, offering attendance and organization management (Basic tier) and financial management (Plus tier) as subscription services for course organizations and supreme students councils. The system is built with scalability and extensibility in mind, allowing for future enhancements and integrations.
 
 ## License
 
-This project is licensed for educational and non-commercial use only.
+This project is licensed for commercial use by the Veris Dev Team (FC-SSC). Unauthorized redistribution or resale is not permitted.

@@ -48,7 +48,7 @@ export function AdminSidebar({ user, className, org }: { user?: User; className?
     setMounted(true)
   }, [])
 
-  const navItems: NavItem[] = [
+  const navItemsPlus: NavItem[] = [
   { label: "Dashboard", href: "/org-dashboard", icon: LayoutDashboard },
   { label: "Members",   href: "/org-members",   icon: Users },
   { label: "Events",    href: "/org-events",    icon: CalendarDays },
@@ -57,11 +57,17 @@ export function AdminSidebar({ user, className, org }: { user?: User; className?
   { label: "Payments",  href: "/org-payments",  icon: CreditCard },
   { label: "Clearance", href: "/org-clearance", icon: ShieldCheck },
   // { label: "Analytics", href: "/org-reports",   icon: BarChart3 },
-]
+  ]
+
+  const navItemsBasic: NavItem[] = [
+  { label: "Dashboard", href: "/org-dashboard", icon: LayoutDashboard },
+  { label: "Members",   href: "/org-members",   icon: Users },
+  { label: "Events",    href: "/org-events",    icon: CalendarDays },
+  ]
 
   // Get current page label for mobile header
-  const allItems = navItems
-  const currentItem = allItems.find(i => isActiveHref(i.href, pathname))
+  const navItems = org?.subscriptionTier === "basic" ? navItemsBasic : navItemsPlus
+  const currentItem = navItems.find(i => isActiveHref(i.href, pathname))
   return (
     <>
       {/* Desktop sidebar */}

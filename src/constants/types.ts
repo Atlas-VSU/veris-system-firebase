@@ -24,9 +24,11 @@ export type Organization = {
   shortName: string,
   isArchived: boolean,
   subscribed: boolean,
+  subscriptionId: string,
+  subscriptionTier: string,
   users?: string[],
   facultyId?: string,
   programId?: string,
   accessLevel: number,
-  orgLogoUrl?: string
+  orgLogoUrl?: string,
 }

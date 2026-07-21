@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Send email
-    const baseUrl = request.nextUrl.origin;
+    const baseUrl = process.env.NEXT_PUBLIC_STUDENT_PORTAL_URL || "https://veris-student-portal-firebase-dummy.vercel.app";
     const updateUrl = `${baseUrl}/update-record?token=${token}`;
     const { mocked } = await sendUpdateLinkEmail(email, updateUrl);
 

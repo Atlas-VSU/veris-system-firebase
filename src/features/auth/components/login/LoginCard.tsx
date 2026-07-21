@@ -252,18 +252,24 @@ export function LoginCard() {
               }}
             >
               {/* Logo */}
-              <div className="w-full flex justify-center py-3 sm:py-4 lg:py-5">
-                <img
-                  src="/images/ussc-logo-1.webp"
-                  alt="USSC Connect"
-                  className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 object-contain"
-                />
+              <div className="w-full flex justify-center py-3 sm:py-4 lg:py-5 text-[#1F7700]">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20"
+                >
+                  <path d="M4 4l8 16 8-16M8 4l4 8 4-8" />
+                </svg>
               </div>
 
               {/* Title */}
               <div className="text-center">
                 <h2 className="text-2xl sm:text-3xl font-black text-[#1F7700]">
-                  USSC Connect
+                  VERIS
                 </h2>
                 <p className="text-xs sm:text-sm font-semibold text-[#1F7700] mt-1 leading-snug mb-2">
                   Welcome Admin! Enter you credentials to sign in and access

@@ -6,9 +6,6 @@ import LoginCard from "./components/LoginCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useState } from "react";
-import { MakePaymentButton } from "./components/MakePaymentButton";
-import { SelfRegisterButton } from "./components/SelfRegisterButton";
-import { UpdateInformationButton } from "./components/UpdateInformationButton";
 
 export function HomePageLayout() {
   const [loading, setLoading] = useState(false);
@@ -37,15 +34,11 @@ export function HomePageLayout() {
                     Total Clarity.
                   </span>
                 </h1>
-                
                 <p className="mt-5 mb-xl mr-10 sm:mt-6 lg:mt-8 text-md sm:text-base lg:text-md leading-snug text-[#1F7700] animate-fade-in-up delay-300 text-center font-medium lg:text-left">
                   Streamline your semestral clearance process by tracking your
                   organizational fees and fines, settle payments online, and
                   monitor your clearance status in real-time.
                 </p>
-                <MakePaymentButton />
-                <SelfRegisterButton />
-                <UpdateInformationButton />
               </div>
             </div>
 
@@ -66,7 +59,6 @@ export function HomePageLayout() {
 
               <div className="relative w-full max-w-2xl mx-auto px-4 lg:pr-8 h-[70vh] lg:h-[80vh] flex items-center justify-center">
                 {/* Main Sign-in Card */}
-                {/* When login card is uncommented change top-0 */}
                 <div
                   className="absolute w-full h-full top-5 left-0 right-[30] z-3 animate-fade-in-up"
                   style={{
@@ -79,7 +71,6 @@ export function HomePageLayout() {
 
                 {/* Temporary Login Admin Card */}
                 <TemporaryLogin />
-                {/* <LoginCard /> Uncomment if homepage with student login*/}
               </div>
             </div>
           </div>
@@ -117,26 +108,12 @@ export function HomePageLayout() {
                 organizational fees and fines, settle payments online, and
                 monitor your clearance status in real-time.
               </p>
-              <MakePaymentButton />
-              <SelfRegisterButton />
-              <UpdateInformationButton />
             </div>
           </div>
 
           {/* Bottom: white card section with background image */}
           <div className="flex-1 relative overflow-hidden flex items-center justify-center">
             <div className="relative z-10 w-full max-w-2xl mx-auto px-4 pt-0 pb-25 flex items-center justify-center">
-              {/* Main Sign-in Card */}
-              <div
-                className="absolute w-full h-full top-0 left-0 right-[30] z-3 animate-fade-in-up"
-                // style={{
-                //   backgroundImage: `url('/images/searchfortruth-2.png')`,
-                //   backgroundSize: "contain",
-                //   backgroundPosition: "center",
-                //   backgroundRepeat: "no-repeat",
-                // }}
-              />
-              {/* <LoginCard /> Uncomment if student login is available*/}
               <TemporaryLogin />
             </div>
           </div>

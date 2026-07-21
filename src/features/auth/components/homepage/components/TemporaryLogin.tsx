@@ -171,7 +171,7 @@ export function TemporaryLogin() {
       setIsLoading(false);
     }
   };
-  
+
 
   return (
     <div>
@@ -207,17 +207,24 @@ export function TemporaryLogin() {
                   "0 8px 40px rgba(27, 94, 36, 0.15), 0 2px 8px rgba(0,0,0,0.08)",
               }}
             >
-              {/* Logo */}
-              <img
-                src="/images/ussc-logo-1.webp"
-                alt="USSC Connect"
-                className="w-20 h-20 object-contain"
-              />
+              <div className="w-20 h-20 text-[#1F7700]">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-full h-full"
+                >
+                  <path d="M4 4l8 16 8-16M8 4l4 8 4-8" />
+                </svg>
+              </div>
 
               {/* Title */}
               <div className="text-center">
                 <h2 className="text-3xl font-black text-[#1F7700]">
-                  USSC Connect
+                  VERIS System
                 </h2>
                 <p className="text-sm font-semibold text-[#1F7700] mt-1 leading-snug">
                   Welcome Admin! Enter your credentials to sign in and access
@@ -240,11 +247,10 @@ export function TemporaryLogin() {
                     type="email"
                     value={email}
                     onChange={handleEmailChange}
-                    className={`w-full h-11 pl-10 pr-4 border ${
-                      emailError
+                    className={`w-full h-11 pl-10 pr-4 border ${emailError
                         ? "border-red-500 focus:ring-red-500"
                         : "border-[#2a9902] focus:ring-[#1F7700]"
-                    } rounded-xl bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 autofill:shadow-[inset_0_0_0px_1000px_rgb(255,255,255)]`}
+                      } rounded-xl bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 autofill:shadow-[inset_0_0_0px_1000px_rgb(255,255,255)]`}
                     disabled={isLoading}
                     placeholder="Enter your email"
                     aria-invalid={!!emailError}
@@ -288,11 +294,10 @@ export function TemporaryLogin() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={handlePasswordChange}
-                    className={`w-full h-10 sm:h-11 lg:h-[50px] pl-10 sm:pl-11 pr-12 border-1 ${
-                      passwordError
+                    className={`w-full h-10 sm:h-11 lg:h-[50px] pl-10 sm:pl-11 pr-12 border-1 ${passwordError
                         ? "border-red-500 focus:ring-red-500"
                         : "border-[#2a9902] focus:ring-[#1F7700]"
-                    } rounded-xl bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 autofill:shadow-[inset_0_0_0px_1000px_rgb(255,255,255)]`}
+                      } rounded-xl bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 autofill:shadow-[inset_0_0_0px_1000px_rgb(255,255,255)]`}
                     disabled={isLoading}
                     placeholder="Enter your password"
                     aria-invalid={!!passwordError}
@@ -327,7 +332,7 @@ export function TemporaryLogin() {
                   </p>
                 )}
               </div>
-                            {/* Error Display */}
+              {/* Error Display */}
               {error && (
                 <div className="mb-1 animate-fade-in-up">
                   <Alert variant="destructive">

@@ -57,14 +57,14 @@ function StatusBadge({ status }: { status: Event["status"] }) {
   switch (status) {
     case "ongoing":
       return (
-        <Badge className="bg-[#C8E6C9] text-[#1B5E20] border-[#A5D6A7] font-semibold text-xs">
-          <span className="w-1.5 h-1.5 bg-[#1B5E20] rounded-full mr-1.5 animate-pulse inline-block" />
+        <Badge className="bg-primary/20 text-primary border border-primary/30 font-semibold text-xs">
+          <span className="w-1.5 h-1.5 bg-primary rounded-full mr-1.5 animate-pulse inline-block" />
           Ongoing
         </Badge>
       )
     case "upcoming":
       return (
-        <Badge className="bg-blue-100 text-blue-800 border-blue-300 font-semibold text-xs">
+        <Badge className="bg-secondary/20 text-secondary border border-secondary/30 font-semibold text-xs">
           <CalendarIcon className="w-3 h-3 mr-1" />
           Upcoming
         </Badge>
@@ -73,7 +73,7 @@ function StatusBadge({ status }: { status: Event["status"] }) {
       return (
         <Badge
           variant="outline"
-          className="bg-muted text-muted-foreground font-semibold text-xs"
+          className="bg-muted text-muted-foreground border-border/40 font-semibold text-xs"
         >
           Completed
         </Badge>
@@ -82,7 +82,7 @@ function StatusBadge({ status }: { status: Event["status"] }) {
       return (
         <Badge
           variant="outline"
-          className="text-muted-foreground font-semibold text-xs"
+          className="text-muted-foreground border-border/20 font-semibold text-xs"
         >
           Archived
         </Badge>
@@ -154,9 +154,9 @@ export function EventListItem({
           <div
             className={`w-1 self-stretch rounded-full flex-shrink-0 ${
               event.status === "ongoing"
-                ? "bg-[#1B5E20]"
+                ? "bg-primary"
                 : event.status === "upcoming"
-                  ? "bg-blue-400"
+                  ? "bg-secondary"
                   : event.status === "completed"
                     ? "bg-muted-foreground/40"
                     : "bg-muted-foreground/20"

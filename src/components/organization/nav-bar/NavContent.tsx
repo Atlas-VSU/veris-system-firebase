@@ -118,7 +118,7 @@ export function NavContent({
             collapsed && "justify-center px-0",
           )}
         >
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#1B5E20]/10 p-1">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 p-1">
             {organization?.orgLogoUrl ? (
               <img
                 src={organization.orgLogoUrl}
@@ -135,7 +135,7 @@ export function NavContent({
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="h-7 w-7 text-[#1B5E20]"
+                className="h-7 w-7 text-primary"
               >
                 <path d="M4 4l8 16 8-16M8 4l4 8 4-8" />
               </svg>
@@ -143,11 +143,11 @@ export function NavContent({
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="truncate text-sm font-bold leading-none tracking-wide bg-linear-to-r from-[#1B5E20] via-[#0D3B12] to-[#0A2E0F] bg-clip-text text-transparent">
+              <p className="truncate text-sm font-bold leading-none tracking-wide bg-linear-to-r from-primary via-[#4E5D44] to-[#3B4734] bg-clip-text text-transparent font-serif">
                 VERIS
               </p>
               <div className="mt-1.5 flex items-center gap-1.5">
-                <span className="inline-flex items-center rounded bg-[#1B5E20]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[#1B5E20]">
+                <span className="inline-flex items-center rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-primary">
                   Admin
                 </span>
               </div>
@@ -155,7 +155,7 @@ export function NavContent({
           )}
         </div>
 
-        <Separator className="bg-[#E0E0E0] shrink-0" />
+        <Separator className="bg-[#DED8CF]/50 shrink-0" />
 
         {/* Nav */}
         <nav
@@ -171,18 +171,18 @@ export function NavContent({
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1B5E20]/30",
+                  "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                   collapsed && "justify-center px-0 size-10 mx-auto",
                   active
-                    ? "bg-[#1B5E20] text-white shadow-sm"
-                    : "text-[#616161] hover:bg-[#1B5E20]/8 hover:text-[#1B5E20]",
+                    ? "bg-primary text-primary-foreground shadow-soft"
+                    : "text-muted-foreground hover:bg-primary/8 hover:text-primary",
                 )}
               >
                 {active && !collapsed && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.75 rounded-full bg-[#8BC34A]" />
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.75 rounded-full bg-secondary" />
                 )}
                 <item.icon
-                  className={cn("size-4 shrink-0", active && "text-white")}
+                  className={cn("size-4 shrink-0", active && "text-primary-foreground")}
                 />
                 {!collapsed && <span>{item.label}</span>}
               </Link>
@@ -216,24 +216,24 @@ export function NavContent({
             <div
               className={cn(
                 "flex items-center gap-2.5 rounded-md px-2 py-1.5",
-                !collapsed && "hover:bg-[#F5F5F5] transition-colors",
+                !collapsed && "hover:bg-[#F0EBE5] transition-colors",
               )}
             >
-              <Avatar className="size-7 shrink-0 border border-[#1B5E20]/20">
+              <Avatar className="size-7 shrink-0 border border-primary/20">
               {organization?.orgLogoUrl ? (
                 <img src={organization?.orgLogoUrl} alt="" className="w-full h-full object-cover" />
               ) : (
-                <AvatarFallback className="bg-[#1B5E20] text-xs font-semibold text-white">
+                <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
                   {organization?.shortName?.toUpperCase() || initials}
                 </AvatarFallback>
               )}
               </Avatar>
               {!collapsed && (
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium text-[#212121]">
+                  <p className="truncate text-xs font-medium text-foreground">
                     {user?.name ?? "Admin User"}
                   </p>
-                  <p className="truncate text-[10px] text-[#616161]">
+                  <p className="truncate text-[10px] text-muted-foreground">
                     {user?.email ?? ""}
                   </p>
                 </div>
@@ -252,7 +252,7 @@ export function NavContent({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="size-9 text-[#616161] hover:bg-destructive/10 hover:text-destructive"
+                        className="size-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                         aria-label="Sign out"
                       >
                         <LogOut className="size-4" />
@@ -272,7 +272,7 @@ export function NavContent({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start gap-2 text-[#616161] hover:bg-destructive/10 hover:text-destructive"
+                    className="w-full justify-start gap-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                   >
                     <LogOut className="size-4" />
                     Sign Out

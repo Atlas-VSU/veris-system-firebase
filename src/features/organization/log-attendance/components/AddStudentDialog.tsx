@@ -51,28 +51,17 @@ export function AddStudentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-3xl">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-1">
-            <div
-              className="h-9 w-9 rounded-xl flex items-center justify-center shadow-sm shrink-0"
-              style={{
-                background: "linear-gradient(135deg, #058C11, #38B000)",
-              }}
-            >
-              <UserPlusIcon className="h-4 w-4 text-white" />
+            <div className="h-9 w-9 bg-primary/10 text-primary rounded-full flex items-center justify-center shadow-soft shrink-0">
+              <UserPlusIcon className="h-4 w-4" />
             </div>
             <div>
-              <DialogTitle
-                className="font-nunito text-base font-bold"
-                style={{ color: "#27500A" }}
-              >
+              <DialogTitle className="font-serif text-base font-bold text-foreground">
                 Add New Student
               </DialogTitle>
-              <DialogDescription
-                className="font-nunito-sans text-xs mt-0.5"
-                style={{ color: "#3B6D11" }}
-              >
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                 Enter the student details to add them to the system.
               </DialogDescription>
             </div>
@@ -80,21 +69,14 @@ export function AddStudentDialog({
         </DialogHeader>
 
         {/* Divider */}
-        <div
-          className="h-px w-full"
-          style={{
-            background:
-              "linear-gradient(to right, transparent, #97C459, transparent)",
-          }}
-        />
+        <div className="h-px w-full bg-border/40" />
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           {/* Student ID */}
           <div className="space-y-1.5">
             <Label
               htmlFor="studentId"
-              className="font-nunito-sans text-xs font-bold uppercase tracking-wider"
-              style={{ color: "#3B6D11" }}
+              className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
             >
               Student ID
             </Label>
@@ -105,20 +87,18 @@ export function AddStudentDialog({
               onChange={handleChange}
               disabled={isSubmitting}
               placeholder="XX-X-XXXXX"
-              style={{ borderColor: "#C0DD97" }}
             />
             {formErrors.studentId && (
               <p className="text-xs text-destructive">{formErrors.studentId}</p>
             )}
           </div>
 
-          {/* Name row */}
+          {/* First Name & Last Name row */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label
                 htmlFor="firstName"
-                className="font-nunito-sans text-xs font-bold uppercase tracking-wider"
-                style={{ color: "#3B6D11" }}
+                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
               >
                 First Name
               </Label>
@@ -128,19 +108,16 @@ export function AddStudentDialog({
                 value={formData.firstName}
                 onChange={handleChange}
                 disabled={isSubmitting}
-                style={{ borderColor: "#C0DD97" }}
+                placeholder="e.g. John"
               />
               {formErrors.firstName && (
-                <p className="text-xs text-destructive">
-                  {formErrors.firstName}
-                </p>
+                <p className="text-xs text-destructive">{formErrors.firstName}</p>
               )}
             </div>
             <div className="space-y-1.5">
               <Label
                 htmlFor="lastName"
-                className="font-nunito-sans text-xs font-bold uppercase tracking-wider"
-                style={{ color: "#3B6D11" }}
+                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
               >
                 Last Name
               </Label>
@@ -150,12 +127,10 @@ export function AddStudentDialog({
                 value={formData.lastName}
                 onChange={handleChange}
                 disabled={isSubmitting}
-                style={{ borderColor: "#C0DD97" }}
+                placeholder="e.g. Doe"
               />
               {formErrors.lastName && (
-                <p className="text-xs text-destructive">
-                  {formErrors.lastName}
-                </p>
+                <p className="text-xs text-destructive">{formErrors.lastName}</p>
               )}
             </div>
           </div>
@@ -164,8 +139,7 @@ export function AddStudentDialog({
           <div className="space-y-1.5">
             <Label
               htmlFor="email"
-              className="font-nunito-sans text-xs font-bold uppercase tracking-wider"
-              style={{ color: "#3B6D11" }}
+              className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
             >
               Email Address
             </Label>
@@ -176,18 +150,17 @@ export function AddStudentDialog({
               value={formData.email}
               onChange={handleChange}
               disabled={isSubmitting}
-              style={{ borderColor: "#C0DD97" }}
+              placeholder="e.g. email@example.com"
             />
             {formErrors.email && (
               <p className="text-xs text-destructive">{formErrors.email}</p>
             )}
           </div>
 
-          {/* Year Level */}
+          {/* Year Level (Optional) */}
           <div className="space-y-1.5">
             <Label
-              className="font-nunito-sans text-xs font-bold uppercase tracking-wider"
-              style={{ color: "#3B6D11" }}
+              className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
             >
               Year Level (Optional)
             </Label>
@@ -203,7 +176,7 @@ export function AddStudentDialog({
               value={formData.yearLevel ? formData.yearLevel.toString() : "0"}
               disabled={isSubmitting}
             >
-              <SelectTrigger style={{ borderColor: "#C0DD97" }}>
+              <SelectTrigger>
                 <SelectValue placeholder="Select year level" />
               </SelectTrigger>
               <SelectContent>
@@ -220,23 +193,23 @@ export function AddStudentDialog({
           {/* Program */}
           <div className="space-y-1.5">
             <Label
-              className="font-nunito-sans text-xs font-bold uppercase tracking-wider"
-              style={{ color: "#3B6D11" }}
+              htmlFor="programId"
+              className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
             >
               Program
             </Label>
             <Select
-              onValueChange={handleSelectChange}
               value={formData.programId}
+              onValueChange={handleSelectChange}
               disabled={isSubmitting}
             >
-              <SelectTrigger style={{ borderColor: "#C0DD97" }}>
-                <SelectValue placeholder="Select a program" />
+              <SelectTrigger>
+                <SelectValue placeholder="Select Program" />
               </SelectTrigger>
               <SelectContent>
-                {programData.map((program) => (
-                  <SelectItem key={program.id} value={program.id}>
-                    {program.name}
+                {programData.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -247,10 +220,7 @@ export function AddStudentDialog({
           </div>
 
           {/* Consent */}
-          <div
-            className="rounded-xl border p-4"
-            style={{ background: "#EAF3DE", borderColor: "#97C459" }}
-          >
+          <div className="rounded-2xl border border-border/40 bg-white/60 p-4">
             <div className="flex items-start gap-3">
               <Checkbox
                 id="terms"
@@ -264,15 +234,11 @@ export function AddStudentDialog({
               <div className="space-y-1">
                 <Label
                   htmlFor="terms"
-                  className="cursor-pointer font-nunito text-sm font-semibold"
-                  style={{ color: "#27500A" }}
+                  className="cursor-pointer font-sans text-sm font-bold text-foreground"
                 >
                   I agree to the terms and conditions
                 </Label>
-                <p
-                  className="font-nunito-sans text-xs leading-relaxed"
-                  style={{ color: "#3B6D11" }}
-                >
+                <p className="text-xs leading-relaxed text-muted-foreground">
                   By checking this box, I consent to the collection and
                   processing of personal information for attendance tracking
                   purposes.
@@ -287,19 +253,9 @@ export function AddStudentDialog({
           </div>
 
           {/* Privacy notice */}
-          <Alert
-            className="border"
-            style={{
-              background: "#EAF3DE",
-              borderColor: "#97C459",
-              color: "#27500A",
-            }}
-          >
-            <InfoIcon className="h-4 w-4" style={{ color: "#058C11" }} />
-            <AlertDescription
-              className="font-nunito-sans text-xs"
-              style={{ color: "#3B6D11" }}
-            >
+          <Alert className="border border-border/40 bg-white/60 text-foreground rounded-2xl">
+            <InfoIcon className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-xs text-muted-foreground">
               Your data will be used solely for attendance tracking and handled
               in accordance with our privacy policy.
             </AlertDescription>
@@ -311,17 +267,19 @@ export function AddStudentDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
+              className="rounded-full cursor-pointer hover:scale-105"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              variant="success"
+              variant="default"
               disabled={isSubmitting}
+              className="rounded-full cursor-pointer hover:scale-105"
             >
               {isSubmitting ? (
                 <>
-                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin text-primary-foreground" />
                   Adding...
                 </>
               ) : (

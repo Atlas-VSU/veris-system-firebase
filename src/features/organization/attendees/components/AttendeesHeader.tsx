@@ -23,35 +23,18 @@ export function AttendeesHeader({
   const { selected } = useTermPeriod()
   
   return (
-    <div
-      className="rounded-xl px-4 sm:px-6 py-4 sm:py-6"
-      style={{
-        background:
-          "linear-gradient(135deg, #ffffff 10%, #EAF3DE 100%, #C0DD97 100%)",
-        borderColor: "#97C459",
-        boxShadow: "0 4px 24px 0 rgba(5,140,17,0.08)",
-      }}
-    >
+    <div className="bg-[#FEFEFA] border border-border/50 rounded-3xl p-6 shadow-soft transition-all duration-300">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         {/* Left: icon + title */}
         <div className="flex items-center gap-3">
-          <div
-            className="h-10 w-10 rounded-xl flex items-center justify-center shadow-sm"
-            style={{ background: "linear-gradient(135deg, #058C11, #38B000)" }}
-          >
-            <UserPlus className="h-5 w-5 text-white" />
+          <div className="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center shadow-soft">
+            <UserPlus className="h-5 w-5" />
           </div>
           <div>
-            <h2
-              className="font-nunito text-xl font-bold"
-              style={{ color: "#27500A" }}
-            >
+            <h2 className="font-serif text-xl font-bold text-foreground">
               Manage Attendees
             </h2>
-            <p
-              className="font-nunito-sans text-sm"
-              style={{ color: "#3B6D11" }}
-            >
+            <p className="text-sm text-muted-foreground">
               View, track, and export attendance records
             </p>
           </div>
@@ -62,8 +45,7 @@ export function AttendeesHeader({
           {(event.status === "ongoing" || event.status === "completed") && !event.finesGenerated && (
             <Button
               asChild
-              className="justify-center gap-1.5 h-10 sm:h-9 text-xs font-bold"
-              style={{ background: "#058C11", color: "#ffffff" }}
+              className="justify-center gap-1.5"
             >
               <Link href={`/org-events/${event.id}/log-attendance`}>
                 <UserPlus className="h-4 w-4 mr-2" />
@@ -79,13 +61,8 @@ export function AttendeesHeader({
               variant="outline"
               onClick={onGenerateFines}
               disabled={isGenerating || !selected?.isActive}
-              style={{
-                borderColor: "#97C459",
-                color: "#27500A",
-                background: "#ffffff",
-              }}
             >
-              <Zap className="size-4 mr-1" style={{ color: "#058C11" }} />
+              <Zap className="size-4 mr-1 text-primary" />
               Generate Fines
             </Button>
           )}
@@ -94,24 +71,15 @@ export function AttendeesHeader({
             variant="outline"
             onClick={onExport}
             disabled={isExporting}
-            className="shadow-sm transition-all duration-200 hover:scale-[1.02]"
-            style={{
-              borderColor: "#97C459",
-              color: "#27500A",
-              background: "#ffffff",
-            }}
           >
             {isExporting ? (
               <>
-                <Loader2
-                  className="h-4 w-4 mr-2 animate-spin"
-                  style={{ color: "#058C11" }}
-                />
+                <Loader2 className="h-4 w-4 mr-2 animate-spin text-primary" />
                 Exporting...
               </>
             ) : (
               <>
-                <Upload className="h-4 w-4 mr-2" style={{ color: "#058C11" }} />
+                <Upload className="h-4 w-4 mr-2 text-primary" />
                 Export
               </>
             )}

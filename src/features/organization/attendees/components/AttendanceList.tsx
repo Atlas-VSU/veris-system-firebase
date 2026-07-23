@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { EventAttendance } from "../../log-attendance/types";
 import {
@@ -59,9 +60,9 @@ function ProgramName({ programId }: { programId: string }) {
   }, [fetchProgramName]);
 
   return (
-  <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-semibold">
-    {programName}
-  </span>
+    <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-semibold">
+      {programName}
+    </span>
   );
 }
 
@@ -190,40 +191,19 @@ export function AttendanceList({
   }, [programIds]);
 
   return (
-    <div
-      className="rounded-xl"
-      style={{
-        background:
-          "linear-gradient(135deg, #ffffff 10%, #EAF3DE 100%, #C0DD97 100%)",
-        boxShadow: "0 4px 24px 0 rgba(5,140,17,0.08)",
-      }}
-    >
+    <div className="bg-[#FEFEFA] border border-border/50 rounded-3xl shadow-soft transition-all duration-300">
       {/* Header */}
-      <div
-        className="px-4 sm:px-6 py-4 sm:py-6 border-b"
-        style={{ borderColor: "#C0DD97" }}
-      >
+      <div className="px-6 py-5 border-b border-border/40">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div
-              className="h-10 w-10 rounded-xl flex items-center justify-center shadow-sm"
-              style={{
-                background: "linear-gradient(135deg, #058C11, #38B000)",
-              }}
-            >
-              <Users className="h-5 w-5 text-white" />
+            <div className="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center shadow-soft">
+              <Users className="h-5 w-5" />
             </div>
             <div>
-              <h3
-                className="font-nunito text-xl font-bold"
-                style={{ color: "#27500A" }}
-              >
+              <h3 className="font-serif text-xl font-bold text-foreground">
                 Attendance Records
               </h3>
-              <div
-                className="flex items-center gap-2 font-nunito-sans text-sm"
-                style={{ color: "#3B6D11" }}
-              >
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                 <span>
                   {attendees.length} of {totalAttendees || attendees.length}{" "}
                   attendees
@@ -249,57 +229,47 @@ export function AttendanceList({
           </div>
 
           {/* Legend */}
-          <div
-            className="mt-4 p-3 rounded-lg border"
-            style={{ background: "#ffffff", borderColor: "#C0DD97" }}
-          >
-            <div className="flex flex-wrap items-center gap-4 text-xs">
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="h-5"
-                  style={{
-                    background: "#EAF3DE",
-                    color: "#27500A",
-                    borderColor: "#97C459",
-                  }}
-                >
-                  <ArrowRight className="h-3 w-3 mr-1" />
-                </Badge>
-                <span style={{ color: "#3B6D11" }}>Time-In</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="h-5 bg-amber-50 text-amber-700 border-amber-200"
-                >
-                  <ArrowLeft className="h-3 w-3 mr-1" />
-                </Badge>
-                <span style={{ color: "#3B6D11" }}>Time-Out</span>
-              </div>
-              {remarkStats.programMismatch > 0 && (
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="h-5 bg-red-50 text-red-700 border-red-200"
-                  >
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                  </Badge>
-                  <span style={{ color: "#3B6D11" }}>Program Issue</span>
-                </div>
-              )}
-              {remarkStats.facultyMismatch > 0 && (
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="h-5 bg-orange-50 text-orange-700 border-orange-200"
-                  >
-                    <UserX className="h-3 w-3 mr-1" />
-                  </Badge>
-                  <span style={{ color: "#3B6D11" }}>Faculty Issue</span>
-                </div>
-              )}
+          <div className="flex flex-wrap items-center gap-4 text-xs mt-4 lg:mt-0 p-3 rounded-2xl bg-white/60 border border-border/40">
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className="h-5 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+              >
+                <ArrowRight className="h-3 w-3 mr-1" />
+              </Badge>
+              <span className="text-muted-foreground font-medium">Time-In</span>
             </div>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className="h-5 bg-secondary/15 text-secondary border-secondary/20 hover:bg-secondary/25"
+              >
+                <ArrowLeft className="h-3 w-3 mr-1" />
+              </Badge>
+              <span className="text-muted-foreground font-medium">Time-Out</span>
+            </div>
+            {remarkStats.programMismatch > 0 && (
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className="h-5 bg-red-50 text-red-700 border-red-200"
+                >
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                </Badge>
+                <span className="text-muted-foreground font-medium">Program Issue</span>
+              </div>
+            )}
+            {remarkStats.facultyMismatch > 0 && (
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className="h-5 bg-orange-50 text-orange-700 border-orange-200"
+                >
+                  <UserX className="h-3 w-3 mr-1" />
+                </Badge>
+                <span className="text-muted-foreground font-medium">Faculty Issue</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -323,196 +293,145 @@ export function AttendanceList({
       </div>
 
       {/* List */}
-      {attendees.length > 0 ? (
-        <div className="px-4 sm:px-6 py-4 sm:py-6">
-          <div className="space-y-3">
-            {attendees.map(({ id, student, timeIn, timeOut, remark }) => {
-              if (!student) return null;
-              const remarkStyles = getRemarkStyles(remark!);
-              const hasRemark = Boolean(remark);
+      {
+        attendees.length > 0 ? (
+          <div className="px-4 sm:px-6 py-4 sm:py-6">
+            <div className="space-y-3">
+              {attendees.map(({ id, student, timeIn, timeOut, remark }) => {
+                if (!student) return null;
+                const remarkStyles = getRemarkStyles(remark!);
+                const hasRemark = Boolean(remark);
 
-              return (
-                <div
-                  key={id || student.studentId}
-                  className={`group relative p-4 rounded-lg border pb-5 transition-all duration-200 hover:shadow-md ${
-                    hasRemark ? `${remarkStyles.bg} ${remarkStyles.border}` : ""
-                  }`}
-                  style={
-                    !hasRemark
-                      ? {
-                          background: "#ffffff",
-                          borderColor: "#C0DD97",
-                        }
-                      : undefined
-                  }
-                  onMouseEnter={
-                    !hasRemark
-                      ? (e) => {
-                          (e.currentTarget as HTMLElement).style.background =
-                            "#EAF3DE";
-                          (e.currentTarget as HTMLElement).style.borderColor =
-                            "#97C459";
-                        }
-                      : undefined
-                  }
-                  onMouseLeave={
-                    !hasRemark
-                      ? (e) => {
-                          (e.currentTarget as HTMLElement).style.background =
-                            "#ffffff";
-                          (e.currentTarget as HTMLElement).style.borderColor =
-                            "#C0DD97";
-                        }
-                      : undefined
-                  }
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                    {/* Student info */}
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="relative">
-                        <Avatar
-                          className="h-10 w-10 border-2 shadow-sm"
-                          style={{ borderColor: "#97C459" }}
-                        >
-                          <AvatarFallback
-                            className="font-semibold text-white"
-                            style={{
-                              background:
-                                "linear-gradient(135deg, #058C11, #38B000)",
-                            }}
-                          >
-                            {student.firstName?.[0]}
-                            {student.lastName?.[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        {hasRemark && (
-                          <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 border-2 border-white" />
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <h4
-                          className="font-nunito font-semibold truncate"
-                          style={{ color: "#27500A" }}
-                        >
-                          {student.firstName} {student.lastName}
-                        </h4>
-                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                          <span
-                            className="text-sm font-mono"
-                            style={{ color: "#3B6D11" }}
-                          >
-                            {student.studentId}
-                          </span>
-                          {student.programId && (
-                            <ProgramName programId={student.programId}/>
+                return (
+                  <div
+                    key={id || student.studentId}
+                    className={cn(
+                      "group relative p-4 rounded-2xl border transition-all duration-300 shadow-xs hover:shadow-md",
+                      hasRemark
+                        ? `${remarkStyles.bg} ${remarkStyles.border}`
+                        : "bg-white/60 border-border/40 hover:bg-white hover:border-primary/30"
+                    )}
+                  >
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                      {/* Student info */}
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="relative">
+                          <Avatar className="h-10 w-10 border-2 border-border shadow-sm">
+                            <AvatarFallback className="font-semibold text-primary-foreground bg-primary">
+                              {student.firstName?.[0]}
+                              {student.lastName?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          {hasRemark && (
+                            <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 border-2 border-white" />
                           )}
                         </div>
+
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-sans font-bold text-foreground truncate">
+                            {student.firstName} {student.lastName}
+                          </h4>
+                          <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                            <span className="text-xs font-mono text-muted-foreground font-semibold">
+                              {student.studentId}
+                            </span>
+                            {student.programId && (
+                              <ProgramName programId={student.programId} />
+                            )}
+                          </div>
+                          {hasRemark && (
+                            <div className="mt-2 lg:hidden">
+                              <Badge
+                                variant="outline"
+                                className={`${remarkStyles.bg} ${remarkStyles.text} ${remarkStyles.border} font-medium text-xs`}
+                              >
+                                <div className="flex items-center gap-1.5">
+                                  {remarkStyles.icon}
+                                  <span className="max-w-full break-words">
+                                    {remark}
+                                  </span>
+                                </div>
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Time records */}
+                      <div className="flex flex-col gap-2 lg:flex-shrink-0">
                         {hasRemark && (
-                          <div className="mt-2 lg:hidden">
+                          <div className="hidden lg:block self-end">
                             <Badge
                               variant="outline"
-                              className={`${remarkStyles.bg} ${remarkStyles.text} ${remarkStyles.border} font-medium text-xs`}
+                              className={`${remarkStyles.bg} ${remarkStyles.text} ${remarkStyles.border} font-medium text-xs max-w-[200px]`}
                             >
                               <div className="flex items-center gap-1.5">
                                 {remarkStyles.icon}
-                                <span className="max-w-full break-words">
-                                  {remark}
-                                </span>
+                                <span className="truncate">{remark}</span>
                               </div>
                             </Badge>
                           </div>
                         )}
-                      </div>
-                    </div>
-
-                    {/* Time records */}
-                    <div className="flex flex-col gap-2 lg:flex-shrink-0">
-                      {hasRemark && (
-                        <div className="hidden lg:block self-end">
+                        <div className="flex flex-row gap-3 flex-wrap justify-center">
+                          {/* Time-in */}
                           <Badge
                             variant="outline"
-                            className={`${remarkStyles.bg} ${remarkStyles.text} ${remarkStyles.border} font-medium text-xs max-w-[200px]`}
+                            className={cn(
+                              "flex items-center h-8 px-3 font-medium rounded-full border transition-all duration-300",
+                              timeIn
+                                ? "bg-primary/10 text-primary border-primary/20"
+                                : "bg-muted text-muted-foreground border-border/40"
+                            )}
                           >
-                            <div className="flex items-center gap-1.5">
-                              {remarkStyles.icon}
-                              <span className="truncate">{remark}</span>
-                            </div>
+                            <ArrowRight className="h-3 w-3 mr-2 flex-shrink-0" />
+                            <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                            <span className="text-xs whitespace-nowrap">
+                              {formatTime(timeIn) || "Not recorded"}
+                            </span>
+                          </Badge>
+
+                          {/* Time-out */}
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "flex items-center h-8 px-3 font-medium rounded-full border transition-all duration-300",
+                              timeOut
+                                ? "bg-secondary/15 text-secondary border-secondary/20"
+                                : "bg-muted text-muted-foreground border-border/40"
+                            )}
+                          >
+                            <ArrowLeft className="h-3 w-3 mr-2 flex-shrink-0" />
+                            <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                            <span className="text-xs whitespace-nowrap">
+                              {formatTime(timeOut) || "Not recorded"}
+                            </span>
                           </Badge>
                         </div>
-                      )}
-                      <div className="flex flex-row gap-3 flex-wrap justify-center">
-                        {/* Time-in */}
-                        <Badge
-                          variant="outline"
-                          className="flex items-center h-8 px-3 font-medium"
-                          style={
-                            timeIn
-                              ? {
-                                  background: "#EAF3DE",
-                                  color: "#27500A",
-                                  borderColor: "#97C459",
-                                }
-                              : {
-                                  background: "#f9fafb",
-                                  color: "#6b7280",
-                                  borderColor: "#e5e7eb",
-                                }
-                          }
-                        >
-                          <ArrowRight className="h-3 w-3 mr-2 flex-shrink-0" />
-                          <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
-                          <span className="text-xs whitespace-nowrap">
-                            {formatTime(timeIn) || "Not recorded"}
-                          </span>
-                        </Badge>
-
-                        {/* Time-out */}
-                        <Badge
-                          variant="outline"
-                          className={`flex items-center h-8 px-3 font-medium ${
-                            timeOut
-                              ? "bg-amber-50 text-amber-700 border-amber-200"
-                              : "bg-gray-50 text-gray-500 border-gray-200"
-                          }`}
-                        >
-                          <ArrowLeft className="h-3 w-3 mr-2 flex-shrink-0" />
-                          <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
-                          <span className="text-xs whitespace-nowrap">
-                            {formatTime(timeOut) || "Not recorded"}
-                          </span>
-                        </Badge>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <div className="p-12 text-center">
-          <div className="flex flex-col items-center gap-3">
-            <div
-              className="h-12 w-12 rounded-full flex items-center justify-center"
-              style={{ background: "#EAF3DE" }}
-            >
-              <Users className="h-6 w-6" style={{ color: "#058C11" }} />
-            </div>
-            <div>
-              <h4
-                className="font-nunito font-semibold mb-1"
-                style={{ color: "#27500A" }}
-              >
-                No attendance records
-              </h4>
-              <p className="text-sm" style={{ color: "#3B6D11" }}>
-                Attendance data will appear here once students check in
-              </p>
+                );
+              })}
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        ) : (
+          <div className="p-12 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-12 w-12 rounded-full flex items-center justify-center bg-primary/15 text-primary">
+                <Users className="h-6 w-6" />
+              </div>
+              <div>
+                <h4 className="font-serif font-bold text-base mb-1 text-foreground">
+                  No attendance records
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Attendance data will appear here once students check in
+                </p>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div >
   );
 }

@@ -92,7 +92,7 @@ export async function sendRegistrationResultEmail(to: string, registrationStatus
       
       <div style="padding: 10px 0; color: #333333; line-height: 1.6;">
         <p>Hello,</p>
-        <p>Thank you for initiating your self-registration process. However, we are unable to verify your credentials. Please contact the appropriate authorities for assistance or send an email to <a href="mailto:[ussc.baybay@vsu.edu.ph]">ussc.baybay@vsu.edu.ph</a>.</p>
+        <p>Thank you for initiating your self-registration process. However, we are unable to verify your credentials. Please contact the appropriate authorities for assistance or send an email to <a href="mailto:[veris-dev@vsu.edu.ph]">veris-dev@vsu.edu.ph</a>.</p>
         
       </div>
       

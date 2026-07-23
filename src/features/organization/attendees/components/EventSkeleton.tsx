@@ -1,9 +1,9 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
 const card =
-  "bg-gradient-to-br from-white via-green-50/30 to-emerald-50/20 dark:from-gray-800 dark:via-gray-800 dark:to-gray-700/50 rounded-xl dark:border-gray-700/60 shadow-lg shadow-green-100/50 dark:shadow-gray-900/20";
+  "bg-[#FEFEFA] border border-border/50 rounded-3xl shadow-soft";
 const innerRow =
-  "p-4 rounded-lg dark:border-gray-700/60 bg-white/80 dark:bg-gray-800/40";
+  "p-4 rounded-2xl bg-white/60 border border-border/40";
 
 export function EventSkeleton() {
   return (

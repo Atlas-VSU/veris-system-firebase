@@ -1,120 +1,120 @@
+"use client";
+
 import { DesktopHeader } from "./components/DesktopHeader";
 import { MobileHeader } from "./components/MobileHeader";
 import { TemporaryLogin } from "./components/TemporaryLogin";
 
-import LoginCard from "./components/LoginCard";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { useState } from "react";
 
 export function HomePageLayout() {
   const [loading, setLoading] = useState(false);
+
   return (
-    <div className="flex min-h-svh flex-col relative bg-white">
-      <div>
-        {/*Desktop layout*/}
-        <div
-          className="hidden lg:block"
-          style={{
-            background:
-              "linear-gradient(to bottom right, #ffffff 0%, #ffffff 25%, #ffffff 30%, #66bd4a 100%, #2E7D32 100%)",
-          }}
-        >
+    <div className="organic-theme flex min-h-svh flex-col relative text-foreground bg-background font-nunito overflow-hidden">
+      {/* Global Grain/Noise Overlay */}
+      <div
+        className="pointer-events-none fixed inset-0 z-50 opacity-[0.035] mix-blend-multiply"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+        }}
+      />
+
+      {/* Amorphous Blobs for atmospheric depth */}
+      <div
+        className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] bg-primary/10 rounded-full blur-3xl animate-float pointer-events-none"
+        style={{ borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' }}
+      />
+      <div
+        className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] bg-secondary/10 rounded-full blur-3xl animate-float-delayed pointer-events-none"
+        style={{ borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%' }}
+      />
+
+      <div className="w-full flex-1 flex flex-col">
+        {/* Desktop layout */}
+        <div className="hidden lg:block relative min-h-screen bg-transparent w-full">
           <DesktopHeader />
-          <div className="relative min-h-screen flex flex-col lg:flex-row z-10">
-            {/* Left Side */}
-            <div className="hero-left-clip flex-1 relative overflow-hidden lg:flex-none lg:w-[50%] flex items-center min-h-[65vh] lg:min-h-screen">
-              <div className="relative z-10 w-full pt-28 pb-16 pl-6 pr-0 sm:px-10 lg:pt-0 lg:pb-0 lg:pl-16 lg:pr-10 lg:ml-10 mx-auto mr-0">
-                <h1 className="mb-4 text-4xl lg:text-[2.5rem] xl:text-[3.3rem] font-bold tracking-tight text-[#1F7700] leading-[1.1] animate-fade-in-up text-center lg:text-left">
-                  Real-Time Eligibility.
-                  <span className="block text-[#1F7700] font-bold">
-                    Effortless Settlement.
+          <div className="relative min-h-screen flex z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full">
+            {/* Left Side - Hero text */}
+            <div className="flex-1 flex items-center pr-8 w-1/2">
+              <div className="w-full pt-16">
+                <h1 className="mb-6 text-4xl xl:text-5xl font-extrabold tracking-tight text-foreground font-serif leading-[1.15] animate-fade-in-up">
+                  <span className="block whitespace-nowrap">Real-Time Tracking.</span>
+                  <span className="block text-primary whitespace-nowrap">
+                    Effortless Monitoring.
                   </span>
-                  <span className="block text-[#1F7700] font-bold">
-                    Total Clarity.
+                  <span className="block text-secondary whitespace-nowrap">
+                    Total Control.
                   </span>
                 </h1>
-                <p className="mt-5 mb-xl mr-10 sm:mt-6 lg:mt-8 text-md sm:text-base lg:text-md leading-snug text-[#1F7700] animate-fade-in-up delay-300 text-center font-medium lg:text-left">
-                  Streamline your semestral clearance process by tracking your
-                  organizational fees and fines, settle payments online, and
-                  monitor your clearance status in real-time.
+                <p className="mt-6 text-lg leading-relaxed text-muted-foreground animate-fade-in-up delay-300 max-w-xl">
+                  Streamline your organization's semestral clearance process.
+                  Monitor student eligibility, track organizational fees and fines,
+                  and verify payment settlements in real-time.
                 </p>
               </div>
             </div>
 
-            {/* Right Side */}
-            <div className="flex-1 relative bg-transparent overflow-hidden flex items-center justify-center lg:flex-none lg:w-1/2">
-              {/* Subtle background pattern */}
-              <div
-                className="absolute inset-0 opacity-[0.02] "
-                style={{
-                  backgroundImage: `
-                radial-gradient(circle at 20% 80%, #058C11 1px, transparent 1px),
-                radial-gradient(circle at 80% 20%, #38B000 1px, transparent 1px),
-                radial-gradient(circle at 40% 40%, #87D300 1px, transparent 1px)
-              `,
-                  backgroundSize: "100px 100px",
-                }}
-              />
-
-              <div className="relative w-full max-w-2xl mx-auto px-4 lg:pr-8 h-[70vh] lg:h-[80vh] flex items-center justify-center">
-                {/* Main Sign-in Card */}
-                <div
-                  className="absolute w-full h-full top-5 left-0 right-[30] z-3 animate-fade-in-up"
+            {/* Right Side - Login Image + Card */}
+            <div className="flex-1 relative overflow-hidden flex items-center justify-center w-1/2">
+              <div className="relative w-full max-w-lg mx-auto h-[80vh] flex items-center justify-center">
+                {/* Background Image / Logo (optimized & rotated slightly) */}
+                {/* <div
+                  className="absolute inset-0 z-0 animate-fade-in-up rotate-[-1.5deg] scale-95 opacity-80 transition-transform duration-700 hover:scale-100"
                   style={{
-                    backgroundImage: `url('/images/searchfortruth-2.png')`,
+                    backgroundImage: `url('/images/searchfortruth-transparent.png')`,
                     backgroundSize: "contain",
                     backgroundPosition: "center",
                     backgroundRepeat: "no-repeat",
                   }}
-                />
+                /> */}
 
-                {/* Temporary Login Admin Card */}
-                <TemporaryLogin />
+                {/* Temporary Login Admin Card overlay */}
+                <div className="relative z-10 w-full">
+                  <TemporaryLogin />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/*mobile layout*/}
-        <div
-          className="lg:hidden flex flex-col min-h-svh"
-          style={{
-            background:
-              "linear-gradient(to bottom, #ffffff 0%, #ffffff 25%, #ffffff 30%, #66bd4a 100%, #2E7D32 100%)",
-          }}
-        >
-          {/* Top: green hero section with diagonal bottom cut */}
-          <div className="hero-left-clip relative overflow-hidden flex items-center">
-            {/* Inline header — matches desktop style */}
-            <MobileHeader />
+        {/* Mobile layout */}
+        <div className="lg:hidden flex flex-col min-h-svh bg-transparent w-full">
+          <MobileHeader />
 
-            <div className="absolute top-20 left-10 w-32 h-32 bg-white/5 rounded-full blur-xl animate-float" />
-            <div className="absolute bottom-20 right-10 w-24 h-24 bg-white/5 rounded-full blur-xl animate-float-delayed" />
-            <div className="absolute top-1/2 right-20 w-16 h-16 bg-white/3 rounded-full blur-lg animate-gentle-rotate" />
-
-            <div className="relative z-10 w-full pt-30 pb-20 px-6 sm:px-10 max-w-xl mx-auto">
-              <h1 className="mb-8 text-4xl lg:text-[2.5rem] xl:text-[3.3rem] font-bold tracking-tight text-[#1F7700] leading-[1.1] animate-fade-in-up text-center lg:text-left">
-                Real-Time Eligibility.
-                <span className="block text-[#1F7700] font-bold">
-                  Effortless Settlement.
-                </span>
-                <span className="block text-[#1F7700] font-bold">
-                  Total Clarity.
-                </span>
-              </h1>
-              <p className="mt-5 mb-xl mr-10 sm:mt-6 lg:mt-8 text-md sm:text-base lg:text-md leading-snug text-[#1F7700] animate-fade-in-up delay-300 text-center font-medium lg:text-left">
-                Streamline your semestral clearance process by tracking your
-                organizational fees and fines, settle payments online, and
-                monitor your clearance status in real-time.
-              </p>
-            </div>
+          {/* Top Hero text section */}
+          <div className="relative overflow-hidden pt-28 pb-10 px-6 sm:px-10 max-w-xl mx-auto flex flex-col items-center">
+            <h1 className="mb-6 text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground font-serif leading-[1.15] animate-fade-in-up text-center">
+              Real-Time Tracking.
+              <span className="block text-primary">
+                Effortless Monitoring.
+              </span>
+              <span className="block text-secondary">
+                Total Control.
+              </span>
+            </h1>
+            <p className="text-md leading-relaxed text-muted-foreground animate-fade-in-up delay-300 text-center">
+              Streamline your organization's semestral clearance process.
+              Monitor student eligibility, track organizational fees and fines,
+              and verify payment settlements in real-time.
+            </p>
           </div>
 
-          {/* Bottom: white card section with background image */}
-          <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-            <div className="relative z-10 w-full max-w-2xl mx-auto px-4 pt-0 pb-25 flex items-center justify-center">
-              <TemporaryLogin />
+          {/* Bottom Card section */}
+          <div className="flex-1 relative overflow-hidden flex items-center justify-center px-4 pb-16">
+            <div className="relative z-10 w-full max-w-md">
+              {/* Subtle background image behind card for mobile */}
+              <div
+                className="absolute inset-0 -top-10 bottom-10 z-0 opacity-15 rotate-[1deg] scale-105 pointer-events-none"
+                style={{
+                  backgroundImage: `url('/images/searchfortruth-transparent.png')`,
+                  backgroundSize: "contain",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                }}
+              />
+              <div className="relative z-10">
+                <TemporaryLogin />
+              </div>
             </div>
           </div>
         </div>

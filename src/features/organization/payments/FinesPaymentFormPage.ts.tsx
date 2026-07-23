@@ -16,7 +16,7 @@ import { SuccessScreen } from "./components/SuccessScreen";
 import { PaymentFormData } from "@/lib/validators";
 import { usePaymentForm, ImageData } from "./hooks/usePaymentForm";
 import { ImageUpload } from "./components/ImageUpload";
-import { SelectedPaymentItems } from "@/app/(public)/payment/page";
+import { SelectedPaymentItems } from "./types";
 import { PaymentBrandHeader } from "./components/PaymentBrandHeader";
 import { PaymentProgressBar } from "./components/PaymentProgressBar";
 interface StudentData {

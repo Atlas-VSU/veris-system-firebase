@@ -38,19 +38,22 @@ export function LoadingScreen({
       <div className="bg-white/20 p-8 rounded-xl shadow-xl flex flex-col items-center max-w-md mx-4 border border-border">
         <div className="w-24 h-24 relative mb-6 animate-pulse">
           {/* Logo */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Image
-              src="/images/ussc-logo-1.webp"
-              alt="USSC CONNECT"
-              width={64}
-              height={64}
-              className="w-16 h-16 object-contain"
-              priority
-            />
+          <div className="absolute inset-0 flex items-center justify-center text-primary-foreground">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-16 h-16"
+            >
+              <path d="M4 4l8 16 8-16M8 4l4 8 4-8" />
+            </svg>
           </div>
-          {/* Loader2 spinner overlay */}          
+          {/* Loader2 spinner overlay */}
         </div>
-        <h3 className="text-xl font-black text-accent-foreground mb-2">USSC CONNECT</h3>
+        <h3 className="text-xl font-black text-accent-foreground mb-2">VERIS</h3>
         <p className="text-base font-medium text-center text-primary mb-4">{message}</p>
         {showDelayMessage && showDelayed && (
           <p className="text-sm text-muted-foreground text-center mt-2 animate-fade-in">

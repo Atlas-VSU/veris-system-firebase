@@ -119,18 +119,32 @@ export function NavContent({
           )}
         >
           <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#1B5E20]/10 p-1">
-            <img
-              src={organization?.orgLogoUrl || "/images/ussc-logo-1.webp"}
-              alt={organization?.shortName?.toUpperCase() || "USSC Logo"}
-              width={32}
-              height={32}
-              className="h-7 w-7 object-contain"
-            />
+            {organization?.orgLogoUrl ? (
+              <img
+                src={organization.orgLogoUrl}
+                alt={organization?.shortName?.toUpperCase() || "Logo"}
+                width={32}
+                height={32}
+                className="h-7 w-7 object-contain"
+              />
+            ) : (
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-7 w-7 text-[#1B5E20]"
+              >
+                <path d="M4 4l8 16 8-16M8 4l4 8 4-8" />
+              </svg>
+            )}
           </div>
           {!collapsed && (
             <div className="min-w-0">
               <p className="truncate text-sm font-bold leading-none tracking-wide bg-linear-to-r from-[#1B5E20] via-[#0D3B12] to-[#0A2E0F] bg-clip-text text-transparent">
-                USSC Connect
+                VERIS
               </p>
               <div className="mt-1.5 flex items-center gap-1.5">
                 <span className="inline-flex items-center rounded bg-[#1B5E20]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[#1B5E20]">

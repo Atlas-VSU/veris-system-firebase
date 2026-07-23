@@ -26,16 +26,23 @@ export default function LoginCard() {
           boxShadow: "0 8px 40px rgba(27, 94, 32, 0.15), 0 2px 8px rgba(0,0,0,0.08)",
         }}
       >
-        {/* Logo */}
-        <img
-          src="/images/ussc-logo-1.webp"
-          alt="USSC Connect"
-          className="w-20 h-20 object-contain"
-        />
+        <div className="w-20 h-20 text-[#1F7700]">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="w-full h-full"
+          >
+            <path d="M4 4l8 16 8-16M8 4l4 8 4-8" />
+          </svg>
+        </div>
 
         {/* Title */}
         <div className="text-center">
-          <h2 className="text-3xl font-black text-[#1F7700]">USSC Connect</h2>
+          <h2 className="text-3xl font-black text-[#1F7700]">VERIS</h2>
           <p className="text-sm font-semibold text-[#1F7700] mt-1 leading-relaxed">
             Welcome! Please select your portal to sign in and access your dashboard.
           </p>

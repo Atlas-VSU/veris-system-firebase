@@ -18,13 +18,13 @@ export async function sendRegistrationEmail(to: string, registrationUrl: string)
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #ffffff;">
       <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #2E7D32; padding-bottom: 20px;">
-        <h2 style="color: #1B5E20; margin: 0; font-size: 24px;">USSC Connect</h2>
+        <h2 style="color: #1B5E20; margin: 0; font-size: 24px;">VERIS</h2>
         <p style="color: #666666; margin: 5px 0 0 0; font-size: 14px;">Self-Registration Verification</p>
       </div>
       
       <div style="padding: 10px 0; color: #333333; line-height: 1.6;">
         <p>Hello,</p>
-        <p>Thank you for initiating your self-registration process with USSC Connect. To verify your email and complete your registration, please click the button below:</p>
+        <p>Thank you for initiating your self-registration process with VERIS. To verify your email and complete your registration, please click the button below:</p>
         
         <div style="text-align: center; margin: 30px 0;">
           <a href="${registrationUrl}" style="background-color: #2E7D32; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px rgba(46, 125, 50, 0.15); transition: background-color 0.2s;">
@@ -48,8 +48,13 @@ export async function sendRegistrationEmail(to: string, registrationUrl: string)
     </div>
   `;
 
+  if (!smtpEmail || !smtpPassword) {
+    console.log("[sendRegistrationEmail] SMTP not configured — registration URL:", registrationUrl);
+    return { sent: false, mocked: true };
+  }
+
   await transporter.sendMail({
-    from: `"USSC Connect" <${smtpEmail}>`,
+    from: `"VERIS SYSTEM <${smtpEmail}>`,
     to,
     subject: "USSC Freshman Registration Link",
     text: `Complete your Self-Registration by visiting: ${registrationUrl}`,
@@ -60,13 +65,11 @@ export async function sendRegistrationEmail(to: string, registrationUrl: string)
 }
 
 // Sends a result email to the user based on the verification decision.
-export async function sendRegistrationResultEmail(to: string, registrationStatus: string): Promise<{ sent: boolean }> {
-
-
+export async function sendRegistrationResultEmail(to: string, registrationStatus: string): Promise<{ sent: boolean; mocked?: boolean }> {
   const htmlContent = registrationStatus === "approved" ? `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #ffffff;">
       <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #2E7D32; padding-bottom: 20px;">
-        <h2 style="color: #1B5E20; margin: 0; font-size: 24px;">USSC Connect</h2>
+        <h2 style="color: #1B5E20; margin: 0; font-size: 24px;">VERIS</h2>
         <p style="color: #666666; margin: 5px 0 0 0; font-size: 14px;">Self-Registration Verification</p>
       </div>
       
@@ -83,7 +86,7 @@ export async function sendRegistrationResultEmail(to: string, registrationStatus
   `: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #ffffff;">
       <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #2E7D32; padding-bottom: 20px;">
-        <h2 style="color: #1B5E20; margin: 0; font-size: 24px;">USSC Connect</h2>
+        <h2 style="color: #1B5E20; margin: 0; font-size: 24px;">VERIS</h2>
         <p style="color: #666666; margin: 5px 0 0 0; font-size: 14px;">Self-Registration Verification</p>
       </div>
       
@@ -99,13 +102,15 @@ export async function sendRegistrationResultEmail(to: string, registrationStatus
     </div>
   `;
 
-
-
+  if (!smtpEmail || !smtpPassword) {
+    console.log("[sendRegistrationResultEmail] SMTP not configured — status email to:", to, "status:", registrationStatus);
+    return { sent: false, mocked: true };
+  }
 
   await transporter.sendMail({
-    from: `"USSC Connect" <${smtpEmail}>`,
+    from: `"VERIS" <${smtpEmail}>`,
     to,
-    subject: "USSC Freshman Registration Status",
+    subject: "VERIS System Registration Status",
     text: `Your Self-Registration status is ${registrationStatus}.`,
     html: htmlContent,
   });
@@ -123,13 +128,13 @@ export async function sendUpdateLinkEmail(
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #ffffff;">
       <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #2E7D32; padding-bottom: 20px;">
-        <h2 style="color: #1B5E20; margin: 0; font-size: 24px;">USSC Connect</h2>
+        <h2 style="color: #1B5E20; margin: 0; font-size: 24px;">VERIS</h2>
         <p style="color: #666666; margin: 5px 0 0 0; font-size: 14px;">Update Student Record</p>
       </div>
 
       <div style="padding: 10px 0; color: #333333; line-height: 1.6;">
         <p>Hello,</p>
-        <p>We received a request to update your student record on USSC Connect. Click the button below to proceed:</p>
+        <p>We received a request to update your student record on VERIS. Click the button below to proceed:</p>
 
         <div style="text-align: center; margin: 30px 0;">
           <a href="${updateUrl}" style="background-color: #2E7D32; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px rgba(46, 125, 50, 0.15);">
@@ -159,12 +164,12 @@ export async function sendUpdateLinkEmail(
   }
 
   await transporter.sendMail({
-    from: `"USSC Connect" <${smtpEmail}>`,
+    from: `"VERIS System" <${smtpEmail}>`,
     to,
-    subject: "USSC Connect — Update Your Student Record",
+    subject: "VERIS System — Update Your Student Record",
     text: `Update your student record by visiting: ${updateUrl}`,
     html: htmlContent,
   });
 
   return { sent: true };
-}
+}

@@ -430,6 +430,7 @@ export async function GET(request: NextRequest) {
         return {
           id: orgId,
           name: orgData?.name ? String(orgData.name) : display.name, 
+          subscriptionTier: String(orgData?.subscriptionTier ?? "basic"),
           acronym: display.acronym,
           outstandingAmount: due.feeAmount + due.fineAmount,
           feeAmount: due.feeAmount,

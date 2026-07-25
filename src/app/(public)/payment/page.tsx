@@ -27,6 +27,7 @@ export interface TermData {
 export interface OrganizationData {
   id: string;
   name: string;
+  subscriptionTier: string;
   acronym: string;
   outstandingAmount: number;
   statusStates?: Array<"unpaid" | "pending" | "rejected" | "verified">;
@@ -165,6 +166,7 @@ export default function PaymentPage() {
           id: org.id,
           name: org.name,
           acronym: org.acronym,
+          subscriptionTier: org.subscriptionTier,
           outstandingAmount: Number(org.outstandingAmount ?? 0),
           paymentSummary: org.paymentSummary ?? { pending: 0, verified: 0, rejected: 0, unpaid: 0 },
           feeAmount: Number(org.feeAmount ?? 0),
@@ -269,6 +271,7 @@ export default function PaymentPage() {
           organizations={organizationDues.map((org) => ({
             id: org.id,
             name: org.name,
+            subscriptionTier: org.subscriptionTier,
             acronym: org.acronym,
             outstandingAmount: org.outstandingAmount,
             statusStates: getOrganizationStatusStates(org),

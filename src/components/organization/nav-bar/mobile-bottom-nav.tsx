@@ -8,6 +8,7 @@ import React from "react";
 import { cacheUtils } from "@/utils/cacheUtils";
 import { signOut } from "firebase/auth";
 import { auth } from "@/firebase/firebase.config";
+import { Organization } from "@/constants/types";
 
 // Accept either LucideIcon or a function component that returns JSX
 type IconType = LucideIcon | React.FC<{ className?: string }>;
@@ -29,9 +30,10 @@ interface MobileBottomNavProps {
   iconMap: IconMap;
   /** Called when a link with an `action` is tapped. Use this to e.g. sign the user out. */
   onAction?: (action: string) => void;
+  org: Organization;
 }
 
-export function MobileBottomNav({ links, iconMap, onAction }: MobileBottomNavProps) {
+export function MobileBottomNav({ links, iconMap, onAction, org }: MobileBottomNavProps) {
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const [showMore, setShowMore] = React.useState(false);
@@ -41,7 +43,14 @@ export function MobileBottomNav({ links, iconMap, onAction }: MobileBottomNavPro
   const moreLabels = new Set(["members", "fees", "fines", "clearance"]);
   const visibleLinks = links.filter((link) => !moreLabels.has(link.label.trim().toLowerCase()));
   const overflowLinks = links.filter((link) => moreLabels.has(link.label.trim().toLowerCase()));
-  const hasOverflow = overflowLinks.length > 0;
+  let hasOverflow = overflowLinks.length > 0;
+
+  let navLinksToUse = links;
+
+  if (org?.subscriptionTier === "basic") {
+    navLinksToUse = links.filter((link) => link.label === "Dashboard" || link.label === "Events" || link.label === "Members" || link.label === "Logout");
+    hasOverflow = false;
+  }
 
   const isActiveRoute = (href: string) => {
     if (!pathname) return false;
@@ -144,11 +153,19 @@ export function MobileBottomNav({ links, iconMap, onAction }: MobileBottomNavPro
 
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] shadow-lg">
         <div className="hidden items-center justify-around max-[420px]:flex">
-          {visibleLinks.map((link) => (
+          {org?.subscriptionTier === "basic" ? ( 
+            navLinksToUse.map((link) => (
             <div key={`compact-${link.label}`} className="flex-1">
               {renderNavLink(link, true)}
             </div>
-          ))}
+          )))
+          : (
+            visibleLinks.map((link) => (
+              <div key={`compact-${link.label}`} className="flex-1">
+                {renderNavLink(link, true)}
+              </div>
+            ))
+          )}
 
           {hasOverflow && (
             <button

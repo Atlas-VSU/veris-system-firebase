@@ -4,50 +4,30 @@ import Link from "next/link";
 
 export function DesktopHeader() {
   return (
-    <div>
-      <header className="absolute m-8 inset-3 top-0 z-30 px-6 sm:px-10 py-0 flex items-center justify-between bg-transparent h-20">
-        <div className="inline-flex items-center gap-4 group">
-          <img
-            src="/images/main-banner-2.png"
-            alt="USSC-Connect"
-            className="ml-5 h-20 w-auto  object-contain"
-          />
+    <div className="w-full flex justify-center absolute top-4 z-40 px-4 pointer-events-none">
+      <header className="w-full max-w-7xl h-16 px-6 md:px-8 flex items-center justify-between bg-[#FEFEFA]/70 backdrop-blur-md border border-[#DED8CF]/50 rounded-full shadow-soft pointer-events-auto">
+        <div className="flex items-center gap-3 group">
+          <div className="flex items-center justify-center p-1 bg-primary/10 rounded-full h-10 w-10 transition-all duration-300 group-hover:scale-105">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5 text-primary"
+            >
+              <path d="M4 4l8 16 8-16M8 4l4 8 4-8" />
+            </svg>
+          </div>
+          <span className="text-md font-bold tracking-wider text-foreground font-serif">
+            VERIS
+          </span>
         </div>
-        <nav className="hidden md:flex items-center gap-8 text-sm font-regular text-[#2E7D32]">
-          {/* <Link
-            href="/"
-            className="hover:text-[#2E7D32] transition-colors uppercase"
-          >
-            Home
-          </Link>
-
-          <Link
-            href="/about"
-            className="hover:text-[#2E7D32] transition-colors uppercase"
-          >
-            About
-          </Link>
-
-          <Link
-            href="/contact"
-            className="hover:text-[#2E7D32] transition-colors uppercase"
-          >
-            Contact
-          </Link> */}
-
-          {/* <Link
-            href="/login"
-            className="px-4 py-2 rounded-lg bg-linear-to-r from-[#8BC34A] to-[#2E7D32] text-white hover:bg-[#2E7D32] transition-colors uppercase"
-          >
-            Login
-          </Link> */}
-
-          {/* <Link
-            href="/payment"
-            className="px-4 py-2 rounded-lg bg-linear-to-r from-[#8BC34A] to-[#2E7D32] text-white hover:bg-[#2E7D32] transition-colors uppercase font-semibold"
-          >
-            Payment
-          </Link> */}
+        <nav className="flex items-center gap-6">
+          <span className="text-xs font-semibold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full">
+            Administrative Portal
+          </span>
         </nav>
       </header>
     </div>

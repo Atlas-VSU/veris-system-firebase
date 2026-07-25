@@ -4,18 +4,18 @@ export enum PaymentType {
   BULK = "bulk"
 }
 
-export enum PaymentMethods{
+export enum PaymentMethods {
   CASH = "cash",
   GCASH = "gcash",
   BANK_TRANSFER = "bank_transfer",
-  WAIVER = "waiver", 
+  WAIVER = "waiver",
 }
 
 export type Term = {
   id?: string,
   AY: string,
   semester: string,
-  isActive : boolean,
+  isActive: boolean,
 }
 
 export type Organization = {
@@ -24,8 +24,8 @@ export type Organization = {
   shortName: string,
   isArchived: boolean,
   subscribed: boolean,
-  subscriptionId: string,
-  subscriptionTier: string,
+  subscriptionId?: string | null,
+  subscriptionTier?: string | null,
   users?: string[],
   facultyId?: string,
   programId?: string,

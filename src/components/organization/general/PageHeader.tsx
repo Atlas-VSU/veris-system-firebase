@@ -23,25 +23,23 @@ export function PageHeader({ title, context, description, action, className, var
       <div className="flex flex-col gap-1">
         <h1
           className={cn(
-            "text-2xl font-bold uppercase tracking-tight",
-            variant === "portal" || variant === "admin"
-              ? "bg-linear-to-r from-[#8BC34A] via-[#2E7D32] to-[#1B5E20] bg-clip-text text-transparent"
-              : "text-foreground",
+            "text-3xl font-extrabold font-serif tracking-tight text-foreground",
+            (variant === "portal" || variant === "admin") && "text-primary"
           )}
         >
           {title}
         </h1>
         {context && (
           <p className={cn(
-            "text-xs font-medium uppercase tracking-wide",
-            variant === "portal" || variant === "admin" ? "text-[#1B5E20]/60"
+            "text-xs font-bold uppercase tracking-wider",
+            (variant === "portal" || variant === "admin") ? "text-secondary"
               : "text-muted-foreground",
           )}>{context}</p>
         )}
         {description && (
           <p className={cn(
-            "text-sm",
-            variant === "portal" || variant === "admin" ? "text-[#1B5E20]/50"
+            "text-sm mt-0.5",
+            (variant === "portal" || variant === "admin") ? "text-muted-foreground"
               : "text-muted-foreground",
           )}>{description}</p>
         )}

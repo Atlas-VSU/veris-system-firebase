@@ -25,10 +25,10 @@ export function NoStudentFound({
   };
 
   return (
-    <div className="rounded-lg border p-4 bg-muted/30">
+    <div className="rounded-2xl border border-border/40 p-4 bg-white/60 shadow-xs">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
         <div>
-          <h3 className="font-medium mb-1">
+          <h3 className="font-serif text-base font-bold text-foreground mb-1">
             {searchType === "id" ? "Student Not Found" : "No Students Found"}
           </h3>
           <p className="text-sm text-muted-foreground">
@@ -41,7 +41,7 @@ export function NoStudentFound({
           size="sm"
           onClick={handleAddStudent}
           disabled={isAdding}
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto rounded-full cursor-pointer hover:scale-105"
         >
           {isAdding ? (
             <>

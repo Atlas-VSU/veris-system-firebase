@@ -76,28 +76,15 @@ export default function LogAttendancePage() {
         <Skeleton className="h-5 w-64" />
 
         {/* PageHeader skeleton */}
-        <div
-          className="rounded-xl px-4 sm:px-6 py-4 sm:py-6"
-          style={{
-            background:
-              "linear-gradient(135deg, #ffffff 10%, #EAF3DE 100%, #C0DD97 100%)",
-            boxShadow: "0 4px 24px 0 rgba(5,140,17,0.08)",
-          }}
-        >
+        <div className="bg-[#FEFEFA] border border-border/50 rounded-3xl p-6 shadow-soft">
           <div className="flex items-start gap-3 mb-6">
-            <Skeleton className="h-10 w-10 rounded-xl" />
+            <Skeleton className="h-10 w-10 rounded-full" />
             <div className="flex-1">
               <Skeleton className="h-6 w-48 mb-1" />
               <Skeleton className="h-4 w-64" />
             </div>
           </div>
-          <div
-            className="h-px w-full mb-6"
-            style={{
-              background:
-                "linear-gradient(to right, transparent, #97C459, transparent)",
-            }}
-          />
+          <div className="relative mb-6 border-b border-border/40" />
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div>
@@ -112,10 +99,9 @@ export default function LogAttendancePage() {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-3 p-3 rounded-lg"
-                  style={{ background: "#ffffff" }}
+                  className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/60 border border-border/40"
                 >
-                  <Skeleton className="h-8 w-8 rounded-lg" />
+                  <Skeleton className="h-8 w-8 rounded-full" />
                   <div className="flex-1">
                     <Skeleton className="h-3 w-16 mb-1" />
                     <Skeleton className="h-4 w-28" />
@@ -127,17 +113,10 @@ export default function LogAttendancePage() {
         </div>
 
         {/* AttendanceInterface skeleton */}
-        <div
-          className="rounded-xl px-4 sm:px-6 py-4 sm:py-6"
-          style={{
-            background:
-              "linear-gradient(135deg, #ffffff 10%, #EAF3DE 100%, #C0DD97 100%)",
-            boxShadow: "0 4px 24px 0 rgba(5,140,17,0.08)",
-          }}
-        >
-          <Skeleton className="h-10 w-full rounded-lg mb-4" />
-          <Skeleton className="h-14 w-full rounded-lg mb-4" />
-          <Skeleton className="h-52 w-full rounded-lg" />
+        <div className="bg-[#FEFEFA] border border-border/50 rounded-3xl p-6 shadow-soft">
+          <Skeleton className="h-10 w-full rounded-full mb-4" />
+          <Skeleton className="h-14 w-full rounded-2xl mb-4" />
+          <Skeleton className="h-52 w-full rounded-2xl" />
         </div>
       </div>
     );
@@ -164,37 +143,19 @@ export default function LogAttendancePage() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div
-          className="flex flex-col items-center justify-center py-20 text-center rounded-xl border"
-          style={{
-            background:
-              "linear-gradient(135deg, #ffffff 10%, #EAF3DE 100%, #C0DD97 100%)",
-            borderColor: "#97C459",
-            boxShadow: "0 4px 24px 0 rgba(5,140,17,0.08)",
-          }}
-        >
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-            style={{ background: "#EAF3DE" }}
-          >
-            <CalendarIcon className="w-8 h-8" style={{ color: "#058C11" }} />
+        <div className="flex flex-col items-center justify-center py-20 text-center rounded-3xl border border-border/50 bg-[#FEFEFA] shadow-soft">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-primary/10 text-primary">
+            <CalendarIcon className="w-8 h-8" />
           </div>
-          <h1
-            className="font-nunito text-xl font-bold mb-2"
-            style={{ color: "#27500A" }}
-          >
+          <h1 className="font-serif text-2xl font-bold mb-2 text-foreground">
             Event Not Found
           </h1>
-          <p
-            className="font-nunito-sans text-sm mb-6 max-w-xs"
-            style={{ color: "#3B6D11" }}
-          >
+          <p className="text-sm mb-6 max-w-xs text-muted-foreground">
             The event you&apos;re looking for doesn&apos;t exist or has been removed.
           </p>
           <Button
             asChild
-            className="text-white border-0 shadow-sm"
-            style={{ background: "linear-gradient(135deg, #058C11, #38B000)" }}
+            className="cursor-pointer hover:scale-105"
           >
             <Link href="/org-events">
               <ArrowLeftIcon className="mr-2 h-4 w-4" />

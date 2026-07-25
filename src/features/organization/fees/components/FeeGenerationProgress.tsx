@@ -25,8 +25,8 @@ export function FeeGenerationProgress({
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#EAF3DE]">
-          <Layers className="h-4 w-4 text-[#3B6D11]" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <Layers className="h-4 w-4 text-primary" />
         </div>
         <div>
           <p className="text-sm font-medium text-foreground">
@@ -47,7 +47,7 @@ export function FeeGenerationProgress({
           { label: "Total",     value: totalCount.toLocaleString() },
           { label: "Batch",     value: totalBatches > 0 ? `${currentBatch} / ${totalBatches}` : "—" },
         ].map(({ label, value }) => (
-          <div key={label} className="rounded-md bg-muted px-3 py-2">
+          <div key={label} className="rounded-2xl bg-muted px-3 py-2">
             <p className="text-[11px] text-muted-foreground mb-0.5">{label}</p>
             <p className="text-lg font-medium tabular-nums leading-tight">{value}</p>
           </div>
@@ -62,8 +62,8 @@ export function FeeGenerationProgress({
         </div>
         <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${pct}%`, backgroundColor: "#3B6D11" }}
+            className="h-full rounded-full transition-all duration-500 ease-out bg-primary"
+            style={{ width: `${pct}%` }}
           />
         </div>
       </div>
@@ -79,8 +79,8 @@ export function FeeGenerationProgress({
                 key={i}
                 className={cn(
                   "h-2 w-2 rounded-full transition-colors duration-300",
-                  done   ? "bg-[#3B6D11]"
-                  : active ? "bg-[#97C459] animate-pulse"
+                  done   ? "bg-primary"
+                  : active ? "bg-primary/50 animate-pulse"
                            : "bg-muted-foreground/20"
                 )}
               />
@@ -91,13 +91,13 @@ export function FeeGenerationProgress({
 
       {/* Status / success row */}
       {isDone ? (
-        <div className="flex items-center gap-2 rounded-md bg-green-50 border border-green-200 dark:bg-green-950 dark:border-green-800 px-3 py-2 text-xs text-green-700 dark:text-green-400">
+        <div className="flex items-center gap-2 rounded-2xl bg-green-50 border border-green-200 dark:bg-green-950 dark:border-green-800 px-3 py-2 text-xs text-green-700 dark:text-green-400">
           <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
           <span>Successfully generated fees for {totalCount.toLocaleString()} students.</span>
         </div>
       ) : (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#3B6D11]" />
+          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
           <span>
             {totalBatches > 0
               ? `Writing batches ${currentBatch}–${nextEnd} of ${totalBatches}...`

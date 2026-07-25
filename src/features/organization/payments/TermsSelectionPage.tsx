@@ -7,7 +7,7 @@ import { ArrowLeft, BookOpen, CalendarDays, ChevronRight, Loader2, UserCircle } 
 import { PaymentBrandHeader } from "./components/PaymentBrandHeader";
 import { PaymentProgressBar } from "./components/PaymentProgressBar";
 import { ResponsiveProgramText } from "./components/ResponsiveProgramText";
-import { StudentData } from "@/app/(public)/payment/page";
+import { StudentData } from "./types";
 
 interface Term {
   id: string;

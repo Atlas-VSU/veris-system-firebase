@@ -29,18 +29,12 @@ export function AttendanceTypeModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle
-            className="font-nunito text-xl font-bold text-center"
-            style={{ color: "#27500A" }}
-          >
+          <DialogTitle className="font-serif text-xl font-bold text-center text-foreground">
             Select Attendance Type
           </DialogTitle>
-          <DialogDescription
-            className="font-nunito-sans text-center"
-            style={{ color: "#3B6D11" }}
-          >
+          <DialogDescription className="text-center text-muted-foreground">
             What would you like to record for{" "}
-            <span className="font-semibold" style={{ color: "#27500A" }}>
+            <span className="font-bold text-foreground">
               {event.name}
             </span>
             ?
@@ -54,37 +48,16 @@ export function AttendanceTypeModal({
                 onSelect("time-in");
                 onOpenChange(false);
               }}
-              className="group flex flex-col items-center justify-center gap-3 py-6 px-4 rounded-xl border-2 transition-all duration-200 hover:shadow-md hover:scale-[1.02]"
-              style={{
-                borderColor: "#97C459",
-                background: "#EAF3DE",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "#C0DD97";
-                (e.currentTarget as HTMLElement).style.borderColor = "#058C11";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "#EAF3DE";
-                (e.currentTarget as HTMLElement).style.borderColor = "#97C459";
-              }}
+              className="group flex flex-col items-center justify-center gap-3 py-6 px-4 rounded-2xl border transition-all duration-300 shadow-xs hover:shadow-md hover:scale-[1.02] bg-primary/10 border-primary/20 hover:bg-primary/20 hover:border-primary/40 cursor-pointer"
             >
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center transition-colors"
-                style={{ background: "linear-gradient(135deg, #058C11, #38B000)" }}
-              >
-                <ClockIcon className="h-6 w-6 text-white" />
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-primary text-primary-foreground shadow-soft">
+                <ClockIcon className="h-6 w-6" />
               </div>
               <div className="text-center">
-                <div
-                  className="font-nunito font-bold text-base"
-                  style={{ color: "#27500A" }}
-                >
+                <div className="font-sans font-bold text-base text-foreground">
                   Check-In
                 </div>
-                <div
-                  className="font-nunito-sans text-xs mt-0.5"
-                  style={{ color: "#3B6D11" }}
-                >
+                <div className="text-xs text-muted-foreground mt-0.5">
                   Attendance begins!
                 </div>
               </div>
@@ -97,16 +70,16 @@ export function AttendanceTypeModal({
                 onSelect("time-out");
                 onOpenChange(false);
               }}
-              className="group flex flex-col items-center justify-center gap-3 py-6 px-4 rounded-xl border-2 border-amber-200 bg-amber-50/50 hover:bg-amber-100/60 hover:border-amber-400 transition-all duration-200 hover:shadow-md hover:scale-[1.02]"
+              className="group flex flex-col items-center justify-center gap-3 py-6 px-4 rounded-2xl border border-secondary/20 bg-secondary/10 hover:bg-secondary/20 hover:border-secondary/40 transition-all duration-300 hover:shadow-md hover:scale-[1.02] cursor-pointer"
             >
-              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition-colors">
-                <TimerIcon className="h-6 w-6 text-amber-700" />
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-secondary text-secondary-foreground shadow-soft">
+                <TimerIcon className="h-6 w-6" />
               </div>
               <div className="text-center">
-                <div className="font-nunito font-bold text-base text-amber-800">
+                <div className="font-sans font-bold text-base text-foreground">
                   Check-Out
                 </div>
-                <div className="font-nunito-sans text-xs text-amber-600 mt-0.5">
+                <div className="text-xs text-muted-foreground mt-0.5">
                   Marks departure...
                 </div>
               </div>

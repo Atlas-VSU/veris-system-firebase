@@ -171,250 +171,222 @@ export function TemporaryLogin() {
       setIsLoading(false);
     }
   };
-  
+
 
   return (
-    <div>
+    <div className="w-full">
       {/* Show loading overlay when authenticating */}
       {isLoading && <LoginLoadingOverlay />}
 
       {/* Main Content Container */}
-      <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 pt-4 sm:pt-6 lg:pt-25 pb-8 sm:pb-4 lg:pb-6 w-full">
-        <div className="relative z-10 flex flex-col lg:grid lg:justify-center gap-8 lg:gap-16 items-center min-h-[600px] rounded-3xl overflow-hidden">
-          {/* Mobile Image - Shows on top for mobile */}
-          <div
-            className="lg:hidden absolute inset-0 w-full h-full z-0"
-            style={{
-              backgroundImage: "url('/images/searchfortruth-2.png')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          />
+      <div className="w-full px-2 py-4">
+        {/* Login Form */}
+        <div className="relative w-full max-w-md mx-auto z-10 animate-fade-in-up">
+          <form
+            onSubmit={handleSubmit}
+            className="relative z-10 w-full bg-[#FEFEFA]/90 backdrop-blur-md border border-[#DED8CF]/50 rounded-[2.5rem_1.5rem_3.5rem_2rem] px-8 py-10 flex flex-col gap-5 shadow-float"
+          >
+            {/* Header / Logo */}
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3 transition-transform duration-500 hover:rotate-12">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-8 h-8"
+                >
+                  <path d="M4 4l8 16 8-16M8 4l4 8 4-8" />
+                </svg>
+              </div>
+              <h2 className="text-3xl font-extrabold font-serif text-foreground leading-none">
+                VERIS
+              </h2>
+              <p className="text-xs font-medium text-muted-foreground mt-2 max-w-[260px] leading-relaxed">
+                Welcome Admin! Enter your credentials to sign in and access your dashboard.
+              </p>
+            </div>
 
-          {/* Login Form */}
-          <div className="relative w-full max-w-md z-10 animate-fade-in-up mx-auto my-auto">
-            {/* Login Form Container */}
-            {/* Malakas Maganda BG */}
-            <form
-              onSubmit={handleSubmit}
-              className="relative z-10 w-full rounded-2xl px-8 py-10 flex flex-col items-center gap-2"
-              style={{
-                background: "rgba(255, 255, 255, 0.82)",
-                backdropFilter: "blur(8px) saturate(140%)",
-                WebkitBackdropFilter: "blur(8px) saturate(140%)",
-                border: "1px solid rgba(255, 255, 255, 0.3)",
-                boxShadow:
-                  "0 8px 40px rgba(27, 94, 36, 0.15), 0 2px 8px rgba(0,0,0,0.08)",
-              }}
-            >
-              {/* Logo */}
-              <img
-                src="/images/ussc-logo-1.webp"
-                alt="USSC Connect"
-                className="w-20 h-20 object-contain"
-              />
-
-              {/* Title */}
-              <div className="text-center">
-                <h2 className="text-3xl font-black text-[#1F7700]">
-                  USSC Connect
-                </h2>
-                <p className="text-sm font-semibold text-[#1F7700] mt-1 leading-snug">
-                  Welcome Admin! Enter your credentials to sign in and access
-                  your dashboard.
+            {/* Email Field */}
+            <div className="w-full space-y-2">
+              <label
+                htmlFor="email"
+                className="block font-bold text-xs text-foreground/80 pl-1"
+              >
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={handleEmailChange}
+                  className={`w-full h-12 pl-11 pr-4 border ${emailError
+                      ? "border-destructive focus-visible:ring-destructive/30"
+                      : "border-border focus-visible:ring-primary/30"
+                    } rounded-full bg-white/50 focus:bg-white text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition-all duration-300 autofill:shadow-[inset_0_0_0px_1000px_rgb(255,255,255)]`}
+                  disabled={isLoading}
+                  placeholder="name@example.com"
+                  aria-invalid={!!emailError}
+                  aria-describedby={emailError ? "email-error" : undefined}
+                  autoComplete="email"
+                />
+              </div>
+              {emailError && (
+                <p
+                  id="email-error"
+                  className="text-destructive text-xs mt-1 pl-3"
+                  role="alert"
+                >
+                  {emailError}
                 </p>
-              </div>
+              )}
+            </div>
 
-              {/* Email Field */}
-              <div className="w-full space-y-2">
-                <label
-                  htmlFor="email"
-                  className="block font-semibold text-sm text-[#1F7700]"
-                >
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1F7700]" />
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={handleEmailChange}
-                    className={`w-full h-11 pl-10 pr-4 border ${
-                      emailError
-                        ? "border-red-500 focus:ring-red-500"
-                        : "border-[#2a9902] focus:ring-[#1F7700]"
-                    } rounded-xl bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 autofill:shadow-[inset_0_0_0px_1000px_rgb(255,255,255)]`}
-                    disabled={isLoading}
-                    placeholder="Enter your email"
-                    aria-invalid={!!emailError}
-                    aria-describedby={emailError ? "email-error" : undefined}
-                    autoComplete="email"
-                  />
-                </div>
-                {emailError && (
-                  <p
-                    id="email-error"
-                    className="text-red-500 text-sm mt-1"
-                    role="alert"
-                  >
-                    {emailError}
-                  </p>
-                )}
-              </div>
-
-              {/* Forgot Password */}
-              <div className="w-full">
-                <a
-                  onClick={handlePasswordReset}
-                  className="block font-semibold text-sm text-[#1F7700] cursor-pointer text-right"
-                >
-                  Forgot Password
-                </a>
-              </div>
-
-              {/* Password Field */}
-              <div className="w-full space-y-2">
+            {/* Password Field */}
+            <div className="w-full space-y-2">
+              <div className="flex justify-between items-center px-1">
                 <label
                   htmlFor="password"
-                  className="block font-semibold text-sm text-[#1F7700]"
+                  className="block font-bold text-xs text-foreground/80"
                 >
                   Password
                 </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1F7700]" />
-                  <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={handlePasswordChange}
-                    className={`w-full h-10 sm:h-11 lg:h-[50px] pl-10 sm:pl-11 pr-12 border-1 ${
-                      passwordError
-                        ? "border-red-500 focus:ring-red-500"
-                        : "border-[#2a9902] focus:ring-[#1F7700]"
-                    } rounded-xl bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 autofill:shadow-[inset_0_0_0px_1000px_rgb(255,255,255)]`}
-                    disabled={isLoading}
-                    placeholder="Enter your password"
-                    aria-invalid={!!passwordError}
-                    aria-describedby={
-                      passwordError ? "password-error" : undefined
-                    }
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1F7700] hover:text-[#1b6600] transition-colors p-1 focus:outline-none focus:ring-2 focus:ring-[#1F7700] rounded"
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                    tabIndex={0}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
-                    ) : (
-                      <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
-                    )}
-                  </button>
-                </div>
-                {passwordError && (
-                  <p
-                    id="password-error"
-                    className="text-red-500 text-sm mt-1"
-                    role="alert"
-                  >
-                    {passwordError}
-                  </p>
-                )}
+                <a
+                  onClick={handlePasswordReset}
+                  className="font-bold text-xs text-secondary hover:underline cursor-pointer transition-colors"
+                >
+                  Forgot Password?
+                </a>
               </div>
-                            {/* Error Display */}
-              {error && (
-                <div className="mb-1 animate-fade-in-up">
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                </div>
-              )}
-
-              {/* Success Message Display */}
-              {successMessage && (
-                <div className="mb-1 animate-fade-in-up">
-                  <Alert className="bg-green-50 border-green-200 text-green-800">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <AlertDescription>{successMessage}</AlertDescription>
-                  </Alert>
-                </div>
-              )}
-
-              {/* Remember Me and Forgot Password */}
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="remember"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="sr-only"
-                    disabled={isLoading}
-                  />
-                  <label
-                    htmlFor="remember"
-                    className="flex items-center cursor-pointer"
-                  >
-                    <div className="w-5 h-5 mr-3 relative bg-white rounded border-2 border-[#1F7700] shrink-0 flex items-center justify-center">
-                      {rememberMe && (
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M5 12L10 17L19 8"
-                            stroke="#1b6600"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="font-semibold text-sm text-[#123d02]">
-                      Remember me
-                    </span>
-                  </label>
-                </div>
-                {/* 
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={handlePasswordChange}
+                  className={`w-full h-12 pl-11 pr-12 border ${passwordError
+                      ? "border-destructive focus-visible:ring-destructive/30"
+                      : "border-border focus-visible:ring-primary/30"
+                    } rounded-full bg-white/50 focus:bg-white text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition-all duration-300 autofill:shadow-[inset_0_0_0px_1000px_rgb(255,255,255)]`}
+                  disabled={isLoading}
+                  placeholder="Enter your password"
+                  aria-invalid={!!passwordError}
+                  aria-describedby={
+                    passwordError ? "password-error" : undefined
+                  }
+                  autoComplete="current-password"
+                />
                 <button
                   type="button"
-                  onClick={handlePasswordReset}
-                  tabIndex={isLoading ? -1 : 0}
-                  aria-disabled={isLoading}
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors p-1 focus:outline-none focus:ring-2 focus:ring-primary rounded-full"
+                  aria-label={
+                    showPassword ? "Hide password" : "Show password"
+                  }
+                  tabIndex={0}
                 >
-                  Forgot password?
-                </button> */}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
               </div>
+              {passwordError && (
+                <p
+                  id="password-error"
+                  className="text-destructive text-xs mt-1 pl-3"
+                  role="alert"
+                >
+                  {passwordError}
+                </p>
+              )}
+            </div>
 
-              {/* Sign In Button */}
-              <button
-                type="submit"
-                className="w-full sm:max-w-[190px] h-12 sm:h-12 lg:h-10 bg-[#288605] text-white font-semibold text-sm sm:text-base lg:text-[15px] rounded-xl hover:bg-[#1b6600] transition-all duration-200 mx-auto disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg hover:shadow-xl active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#1F7700] focus:ring-offset-1"
-                style={{ backgroundColor: "#269000" }}
-                disabled={isLoading}
-                aria-busy={isLoading}
-                aria-live="polite"
-              >
-                <span className="flex-1 text-center">
-                  {isLoading ? "Signing in..." : "Sign in"}
-                </span>
-              </button>
+            {/* Error Display */}
+            {error && (
+              <div className="w-full animate-fade-in-up">
+                <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive rounded-2xl py-3">
+                  <AlertCircle className="h-4 w-4 text-destructive" />
+                  <AlertDescription className="text-xs font-semibold">{error}</AlertDescription>
+                </Alert>
+              </div>
+            )}
 
-              {/* Footer */}
-              <p className="text-xs text-gray-400">Powered by VERIS.</p>
-            </form>
-          </div>
+            {/* Success Message Display */}
+            {successMessage && (
+              <div className="w-full animate-fade-in-up">
+                <Alert className="bg-green-50 border-green-200 text-green-800 rounded-2xl py-3">
+                  <CheckCircle2 className="h-4 w-4 text-green-700" />
+                  <AlertDescription className="text-xs font-semibold">{successMessage}</AlertDescription>
+                </Alert>
+              </div>
+            )}
+
+            {/* Remember Me */}
+            <div className="flex items-center justify-between w-full px-1">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="remember"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="sr-only"
+                  disabled={isLoading}
+                />
+                <label
+                  htmlFor="remember"
+                  className="flex items-center cursor-pointer select-none"
+                >
+                  <div className={`w-5 h-5 mr-2 relative rounded-full border-2 border-primary shrink-0 flex items-center justify-center transition-all duration-300 ${rememberMe ? 'bg-primary' : 'bg-white'}`}>
+                    {rememberMe && (
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M5 12L10 17L19 8"
+                          stroke="var(--primary-foreground)"
+                          strokeWidth="3.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="font-semibold text-xs text-foreground/80">
+                    Keep me signed in
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {/* Sign In Button */}
+            <button
+              type="submit"
+              className="w-full h-12 mt-2 bg-primary text-primary-foreground font-bold text-sm rounded-full hover:bg-primary/95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-soft hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
+              disabled={isLoading}
+              aria-busy={isLoading}
+              aria-live="polite"
+            >
+              <span>
+                {isLoading ? "Signing in..." : "Sign in"}
+              </span>
+            </button>
+
+            {/* Footer */}
+            <p className="text-[10px] text-muted-foreground/60 text-center mt-2">
+              Powered by <span className="font-semibold">VERIS</span>.
+            </p>
+          </form>
         </div>
       </div>
     </div>

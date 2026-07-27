@@ -22,6 +22,7 @@ import { useTermPeriod } from "../../term/hooks/useTermPeriod";
 import { FineTypeDialog } from "../../fines/components/FineTypeDialog";
 import { FineType } from "../../fines/types";
 import { useFineTypes } from "../../fines/hooks/useFineTypes";
+import { useSubscriptionTier } from "../hooks/useSubscriptionTier";
 
 export default function EventsPage() {
   const [currentTab, setCurrentTab] = useState<EventStatus>("completed");
@@ -83,6 +84,10 @@ export default function EventsPage() {
       handleDeleteFineType,
     } = useFineTypes();
 
+  const {
+    subscriptionTier
+  } = useSubscriptionTier();
+
   const handleAddEventClick = async () => {
     setAddOpen(true);
     if (fineTypes.length === 0) await fetchFineTypes();
@@ -118,10 +123,10 @@ export default function EventsPage() {
             <Button size="sm" className="gap-1.5" onClick={handleAddEventClick} disabled={!selected?.isActive}>
               <Plus className="size-4" /> Add Event
             </Button>
-            <Button size="sm" onClick={handleAddFineType}>
+            {subscriptionTier == "basic" && <Button size="sm" onClick={handleAddFineType}>
               <Eye className="h-4 w-4" />
               View Fine Types
-            </Button>
+            </Button>}
           </div>
         }
       />
@@ -136,14 +141,15 @@ export default function EventsPage() {
         <Plus className="size-4" /> Add Event
       </Button>
 
-       <Button
-        size="sm"
-        onClick={handleAddFineType}
-        className="lg:hidden w-full"
-      >
-        <Eye className="h-4 w-4" />
-        View Fine Types
-      </Button>
+       {subscriptionTier == "basic" && <Button
+          size="sm"
+          onClick={handleAddFineType}
+          className="lg:hidden w-full"
+        >
+          <Eye className="h-4 w-4" />
+          View Fine Types
+        </Button>
+      }
 
 
       {/* Search bar */}

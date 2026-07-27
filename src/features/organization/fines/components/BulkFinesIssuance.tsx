@@ -9,6 +9,7 @@ import type { FineGenerationProgress } from "../types";
 import { generateFinesOnEvent } from "@/firebase/fines/create/fines";
 import { Event } from "../../events/types";
 import { toast } from "sonner";
+import { useSubscriptionTier } from "../../events/hooks/useSubscriptionTier";
 
 interface BulkFinesIssuanceProps {
   open: boolean;
@@ -31,6 +32,8 @@ export function BulkFinesIssuance({
     || progress?.phase === "clearance";
   const isDone  = progress?.phase === "done";
   const isError = progress?.phase === "error";
+
+  const { subscriptionTier } = useSubscriptionTier()
 
   const handleClose = () => {
     if (isRunning) return;
@@ -306,7 +309,7 @@ export function BulkFinesIssuance({
             {!isDone &&(
             <div>
             {!isRunning && !isDone? (
-            <Button onClick={handleIssuance}>
+            <Button onClick={handleIssuance} disabled={subscriptionTier === "basic"}>
               <Upload className="h-4 w-4 mr-2" />
               Issue Fines
             </Button>

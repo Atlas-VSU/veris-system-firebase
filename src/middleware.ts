@@ -39,7 +39,7 @@ const isMaintenance = process.env.MAINTENANCE_MODE === "true";
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (isAuthenticated && isPlusRoute && subscriptionTier !== "plus") {
+  if (isAuthenticated && isPlusRoute && (subscriptionTier !== "plus" && subscriptionTier !== "premium")) {
     return NextResponse.redirect(new URL("/subscription-required", request.url));
   }
 

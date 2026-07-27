@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Plus, Search, X } from "lucide-react";
+import { Eye, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/organization/general/PageHeader";
@@ -19,6 +19,10 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useEventFineTypes } from "@/features/organization/events/hooks/useEventFineTypes";
 import type { ViewMode } from "@/features/organization/events/components/ViewToggle";
 import { useTermPeriod } from "../../term/hooks/useTermPeriod";
+import { FineTypeDialog } from "../../fines/components/FineTypeDialog";
+import { FineType } from "../../fines/types";
+import { useFineTypes } from "../../fines/hooks/useFineTypes";
+import { useSubscriptionTier } from "../hooks/useSubscriptionTier";
 
 export default function EventsPage() {
   const [currentTab, setCurrentTab] = useState<EventStatus>("completed");
@@ -26,8 +30,13 @@ export default function EventsPage() {
   const [addOpen, setAddOpen] = useState(false);
   const isMobile = useIsMobile();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const { fineTypes, fetchFineTypes } = useEventFineTypes();
   const { selected } = useTermPeriod();
+
+  const [selectedFineType, setSelectedFineType] = useState<FineType | null>(
+    null,
+  );
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
 
   useEffect(() => {
     if (isMobile) {
@@ -66,11 +75,40 @@ export default function EventsPage() {
     refresh,
   } = useEventsData(currentTab);
 
+  const {
+      fineTypes,
+      isFormSubmitting,
+      fetchFineTypes,
+      handleAddFineSubmission,
+      handleUpdateFineType,
+      handleDeleteFineType,
+    } = useFineTypes();
+
+  const {
+    subscriptionTier
+  } = useSubscriptionTier();
+
   const handleAddEventClick = async () => {
     setAddOpen(true);
     if (fineTypes.length === 0) await fetchFineTypes();
   };
 
+  const handleCreateSubmit = async (data: FineType) => {
+    await handleAddFineSubmission(data);
+  };
+
+  const handleUpdateSubmit = async (fineTypeId: string, data: FineType) => {
+    await handleUpdateFineType(fineTypeId, data);
+  };
+
+  const handleDeleteSubmit = async (fineTypeId: string) => {
+    await handleDeleteFineType(fineTypeId);
+  };
+
+  const handleAddFineType = async () => {
+    setSelectedFineType(null);
+    setIsFormOpen(true);
+  };
   return (
     <div className="flex flex-col gap-4 sm:gap-6 pb-5 xl:pb-0">
       <EventsCacheLoader />
@@ -81,10 +119,14 @@ export default function EventsPage() {
         context={`${sem} Semester · A.Y. ${AY}`}
         description="Manage your organization's events and track attendance"
         action={
-          <div className="hidden xl:flex">
+          <div className="hidden xl:flex gap-2">
             <Button size="sm" className="gap-1.5" onClick={handleAddEventClick} disabled={!selected?.isActive}>
               <Plus className="size-4" /> Add Event
             </Button>
+            {subscriptionTier == "basic" && <Button size="sm" onClick={handleAddFineType}>
+              <Eye className="h-4 w-4" />
+              View Fine Types
+            </Button>}
           </div>
         }
       />
@@ -98,6 +140,17 @@ export default function EventsPage() {
       >
         <Plus className="size-4" /> Add Event
       </Button>
+
+       {subscriptionTier == "basic" && <Button
+          size="sm"
+          onClick={handleAddFineType}
+          className="lg:hidden w-full"
+        >
+          <Eye className="h-4 w-4" />
+          View Fine Types
+        </Button>
+      }
+
 
       {/* Search bar */}
       <div className="relative">
@@ -173,6 +226,17 @@ export default function EventsPage() {
           refresh();
           setAddOpen(false);
         }}
+      />
+
+      <FineTypeDialog
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        fineTypes={fineTypes}
+        onAddFineType={handleCreateSubmit}
+        onUpdateFineType={handleUpdateSubmit}
+        onDeleteFineType={handleDeleteSubmit}
+        isProcessing={isFormSubmitting}
+        fetchFineTypes={fetchFineTypes}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -30,6 +30,8 @@ import {
 import type { Event } from "../types"
 import { formatDate } from "@/utils/useGeneralUtils"
 import { useTermPeriod } from "../../term/hooks/useTermPeriod"
+import { useEventsData } from "../hooks/useEventsData"
+import { useSubscriptionTier } from "../hooks/useSubscriptionTier"
 
 interface EventCardProps {
   event: Event
@@ -96,6 +98,8 @@ export function EventCard({ event, onEdit, onArchive, onUnarchive, onDelete, onI
   const { timeInStart, timeInEnd, timeOutStart, timeOutEnd } = event
   const hasTimeIn = timeInStart && timeInEnd
   const hasTimeOut = timeOutStart && timeOutEnd
+
+  const { subscriptionTier } = useSubscriptionTier();
 
   const timeDisplay = hasTimeIn || hasTimeOut ? (
     <div className="space-y-0.5">
@@ -193,7 +197,7 @@ export function EventCard({ event, onEdit, onArchive, onUnarchive, onDelete, onI
               ) : (
                 <>
                   {!event.finesGenerated && event.status === "completed" && (
-                    <DropdownMenuItem onClick={() => onIssueFine(event)} disabled={opLoading || !selected?.isActive}>
+                    <DropdownMenuItem onClick={() => onIssueFine(event)} disabled={opLoading || !selected?.isActive || subscriptionTier === "basic"}>
                       Issue Fines
                     </DropdownMenuItem>
                     )}

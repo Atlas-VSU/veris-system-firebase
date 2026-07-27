@@ -49,7 +49,7 @@ const mobileIconMap = {
 
 // Organization navigation data
 const organizationData = {
-  navMain: [
+  navMainPlus: [
     {
       title: "Dashboard",
       url: "/org-dashboard",
@@ -96,7 +96,7 @@ const organizationData = {
     //   icon: "settings",
     // },
   ],
-  mobileNavLinks: [
+  mobileNavLinksPlus: [
     {
       label: "Dashboard",
       icon: "dashboard",
@@ -139,6 +139,46 @@ const organizationData = {
       action: "signout",
     }
   ],
+  navMainBasic: [
+    {
+      title: "Dashboard",
+      url: "/org-dashboard",
+      icon: "layout-dashboard",
+    },
+    {
+      title: "Events",
+      url: "/org-events",
+      icon: "calendar",
+    },
+    {
+      title: "Members",
+      url: "/org-members",
+      icon: "users",
+    },
+  ],
+  mobileNavLinksBasic: [
+    {
+      label: "Dashboard",
+      icon: "dashboard",
+      href: "/org-dashboard",
+    },
+    {
+      label: "Events",
+      icon: "calendar",
+      href: "/org-events",
+    },
+    {
+      label: "Members",
+      icon: "users",
+      href: "/org-members",
+    },
+    {
+      label: "Logout",
+      icon: "logout",
+      href: "/",
+      action: "signout",
+    }
+  ]
 };
 
 export default function OrganizationLayout({
@@ -232,8 +272,9 @@ export default function OrganizationLayout({
           </div>
         </main>
         <MobileBottomNav
-          links={organizationData.mobileNavLinks}
+          links={org?.subscriptionTier === "basic" ? organizationData.mobileNavLinksBasic : organizationData.mobileNavLinksPlus}
           iconMap={mobileIconMap}
+          org={org!}
         />
       </div>
     </div>

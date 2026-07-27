@@ -170,20 +170,12 @@ export function FeesRosterContent({
   return (
     <div className="flex flex-col gap-6 pb-5 lg:pb-0">
       {/* Header Card with Green Gradient */}
-      <div
-        className="rounded-xl px-4 sm:px-6 py-4 sm:py-6"
-        style={{
-          background:
-            "linear-gradient(135deg, #ffffff 10%, #EAF3DE 100%, #C0DD97 100%)",
-          boxShadow: "0 4px 24px 0 rgba(5,140,17,0.08)",
-        }}
-      >
+      <div className="bg-[#FEFEFA] border border-border/50 rounded-3xl px-4 sm:px-6 py-4 sm:py-6 shadow-soft">
         <div className="flex flex-col gap-4">
           <Button
             variant="ghost"
             size="sm"
-            className="w-fit -ml-2 hover:bg-white/50 transition-colors"
-            style={{ color: "#058C11" }}
+            className="w-fit -ml-2 rounded-full cursor-pointer hover:scale-105"
             onClick={() => router.back()}
           >
             <ArrowLeft className="size-4 mr-1" /> Back
@@ -191,16 +183,10 @@ export function FeesRosterContent({
 
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex-1">
-              <h1 
-                className="text-2xl font-bold tracking-tight font-nunito mb-1 max-w-[700px] truncate"
-                style={{ color: "#27500A" }}
-              >
+              <h1 className="text-2xl font-bold tracking-tight font-serif text-foreground mb-1 max-w-[700px] truncate">
                 {fee.title}
               </h1>
-              <p 
-                className="text-sm font-nunito-sans"
-                style={{ color: "#3B6D11" }}
-              >
+              <p className="text-sm text-muted-foreground font-semibold">
                 Fees Roster · {fee.semester ? fee.semester + " Semester" : ""}{" "}
                 {fee.academicYear ? " - " + fee.academicYear + " A.Y." : ""} · ₱
                 {(fee.amount || 0).toLocaleString()}
@@ -211,7 +197,7 @@ export function FeesRosterContent({
               variant="destructive"
               size="default"
               onClick={() => setArchiveDialogOpen(true)}
-              className="shrink-0"
+              className="shrink-0 rounded-full cursor-pointer hover:scale-105"
             >
               <Archive className="size-4 mr-2" />
               Archive Fee
@@ -219,89 +205,47 @@ export function FeesRosterContent({
           </div>
 
           {/* Decorative Separator */}
-          <div
-            className="h-px w-full my-2"
-            style={{
-              background:
-                "linear-gradient(to right, transparent, #97C459, transparent)",
-            }}
-          />
+          <div className="h-px w-full my-2 bg-border/40" />
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            <div
-              className="flex items-center gap-3 p-3 rounded-lg"
-              style={{ background: "#ffffff" }}
-            >
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: "#FEF9E6" }}
-              >
-                <Clock className="h-5 w-5" style={{ color: "#D9A200" }} />
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/70 border border-border/20 shadow-xs">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-amber-50 text-amber-600 shadow-soft">
+                <Clock className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p 
-                  className="text-xs font-medium uppercase tracking-wider mb-0.5 font-nunito-sans"
-                  style={{ color: "#3B6D11" }}
-                >
+                <p className="text-xs font-bold uppercase tracking-wider mb-0.5 text-muted-foreground">
                   Pending
                 </p>
-                <p 
-                  className="text-lg font-bold font-nunito"
-                  style={{ color: "#27500A" }}
-                >
+                <p className="text-xl font-bold font-serif text-foreground">
                   {stats.pending?.toLocaleString()}
                 </p>
               </div>
             </div>
 
-            <div
-              className="flex items-center gap-3 p-3 rounded-lg"
-              style={{ background: "#ffffff" }}
-            >
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: "#E8F5E9" }}
-              >
-                <CheckCircle className="h-5 w-5" style={{ color: "#058C11" }} />
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/70 border border-border/20 shadow-xs">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary shadow-soft">
+                <CheckCircle className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p 
-                  className="text-xs font-medium uppercase tracking-wider mb-0.5 font-nunito-sans"
-                  style={{ color: "#3B6D11" }}
-                >
+                <p className="text-xs font-bold uppercase tracking-wider mb-0.5 text-muted-foreground">
                   Verified
                 </p>
-                <p 
-                  className="text-lg font-bold font-nunito"
-                  style={{ color: "#27500A" }}
-                >
+                <p className="text-xl font-bold font-serif text-foreground">
                   {stats.verified?.toLocaleString()}
                 </p>
               </div>
             </div>
 
-            <div
-              className="flex items-center gap-3 p-3 rounded-lg"
-              style={{ background: "#ffffff" }}
-            >
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: "#FEF3F2" }}
-              >
-                <MinusCircle className="h-5 w-5" style={{ color: "#DC2626" }} />
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/70 border border-border/20 shadow-xs">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-red-50 text-red-600 shadow-soft">
+                <MinusCircle className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p 
-                  className="text-xs font-medium uppercase tracking-wider mb-0.5 font-nunito-sans"
-                  style={{ color: "#3B6D11" }}
-                >
+                <p className="text-xs font-bold uppercase tracking-wider mb-0.5 text-muted-foreground">
                   Unpaid
                 </p>
-                <p 
-                  className="text-lg font-bold font-nunito"
-                  style={{ color: "#27500A" }}
-                >
+                <p className="text-xl font-bold font-serif text-foreground">
                   {stats.unpaid?.toLocaleString()}
                 </p>
               </div>
@@ -328,32 +272,22 @@ export function FeesRosterContent({
         onViewChange={() => setViewMode(viewMode === "card" ? "table" : "card")}
       />
 
-      <div
-        className="rounded-xl px-4 sm:px-6 py-4 sm:py-6"
-        style={{
-          background:
-            "linear-gradient(135deg, #ffffff 10%, #EAF3DE 100%, #C0DD97 100%)",
-          boxShadow: "0 4px 24px 0 rgba(5,140,17,0.08)",
-        }}
-      >
+      <div className="bg-[#FEFEFA] border border-border/50 rounded-3xl px-4 sm:px-6 py-4 sm:py-6 shadow-soft">
         <div className="pb-4">
           <Tabs
             value={dataView}
             onValueChange={(v) => handleDataView(v as any)}
           >
-            <TabsList 
-              className="grid w-full grid-cols-2 max-[510px]:h-auto max-[510px]:grid-cols-1 bg-white/50 border"
-              style={{ borderColor: "#97C459" }}
-            >
+            <TabsList className="grid w-full grid-cols-2 max-[510px]:h-auto max-[510px]:grid-cols-1 bg-muted p-1 rounded-full border border-border/40">
               <TabsTrigger 
                 value="submissions" 
-                className="w-full max-[510px]:justify-center data-[state=active]:bg-white data-[state=active]:text-[#058C11] data-[state=active]:font-semibold"
+                className="w-full max-[510px]:justify-center rounded-full text-xs font-semibold"
               >
                 Payment Submissions
               </TabsTrigger>
               <TabsTrigger 
                 value="all-students" 
-                className="w-full max-[510px]:justify-center data-[state=active]:bg-white data-[state=active]:text-[#058C11] data-[state=active]:font-semibold"
+                className="w-full max-[510px]:justify-center rounded-full text-xs font-semibold"
               >
                 All Students
               </TabsTrigger>
@@ -361,7 +295,7 @@ export function FeesRosterContent({
           </Tabs>
         </div>
 
-        <div className="bg-white rounded-lg p-4">
+        <div className="bg-[#FEFEFA] border border-border/40 rounded-3xl p-4">
           {isLoading ? (
             viewMode === "table" ? (
               <TableSkeleton columns={6} rows={10} />

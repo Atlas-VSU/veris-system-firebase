@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CalendarDays, ArrowLeft, BookOpen, Building2, Receipt, AlertCircle, CheckCircle2, UserCircle } from "lucide-react";
-import { FeeItem, Fine, FineItem, OrganizationData, TermData, StudentData } from "@/app/(public)/payment/page";
+import { FeeItem, Fine, FineItem, OrganizationData, TermData, StudentData } from "./types";
 import { PaymentBrandHeader } from "./components/PaymentBrandHeader";
 import { PaymentProgressBar } from "./components/PaymentProgressBar";
 import { ResponsiveProgramText } from "./components/ResponsiveProgramText";
@@ -48,7 +48,7 @@ export default function FinesFeesSelectionPage({
 
   const getPaymentStatus = (item: {
     isPayable?: boolean;
-    paymentState?: "unpaid" | "pending" | "rejected";
+    paymentState?: "unpaid" | "pending" | "rejected" | "verified";
     latestRejectionReason?: string;
   }) => {
     if (item.paymentState === "pending" || item.isPayable === false) {

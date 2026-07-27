@@ -48,7 +48,7 @@ export function AdminSidebar({ user, className, org }: { user?: User; className?
     setMounted(true)
   }, [])
 
-  const navItems: NavItem[] = [
+  const navItemsPlus: NavItem[] = [
   { label: "Dashboard", href: "/org-dashboard", icon: LayoutDashboard },
   { label: "Members",   href: "/org-members",   icon: Users },
   { label: "Events",    href: "/org-events",    icon: CalendarDays },
@@ -57,17 +57,23 @@ export function AdminSidebar({ user, className, org }: { user?: User; className?
   { label: "Payments",  href: "/org-payments",  icon: CreditCard },
   { label: "Clearance", href: "/org-clearance", icon: ShieldCheck },
   // { label: "Analytics", href: "/org-reports",   icon: BarChart3 },
-]
+  ]
+
+  const navItemsBasic: NavItem[] = [
+  { label: "Dashboard", href: "/org-dashboard", icon: LayoutDashboard },
+  { label: "Members",   href: "/org-members",   icon: Users },
+  { label: "Events",    href: "/org-events",    icon: CalendarDays },
+  ]
 
   // Get current page label for mobile header
-  const allItems = navItems
-  const currentItem = allItems.find(i => isActiveHref(i.href, pathname))
+  const navItems = org?.subscriptionTier === "basic" ? navItemsBasic : navItemsPlus
+  const currentItem = navItems.find(i => isActiveHref(i.href, pathname))
   return (
     <>
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden shrink-0 border-r border-[#E0E0E0] bg-white xl:flex xl:flex-col transition-[width] duration-200 ease-in-out sticky top-0 h-svh",
+          "hidden shrink-0 border-r border-[#DED8CF]/50 bg-[#FEFEFA] xl:flex xl:flex-col transition-[width] duration-200 ease-in-out sticky top-0 h-svh",
           collapsed ? "w-15" : "w-60",
           className
         )}
@@ -87,7 +93,7 @@ export function AdminSidebar({ user, className, org }: { user?: User; className?
           onClick={() => setCollapsed(v => !v)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={cn(
-            "absolute -right-3 top-18 z-10 flex size-6 items-center justify-center rounded-full border border-[#E0E0E0] bg-white text-[#616161] shadow-sm transition-colors hover:bg-[#F5F5F5] hover:text-[#1B5E20]",
+            "absolute -right-3 top-18 z-10 flex size-6 items-center justify-center rounded-full border border-[#DED8CF]/50 bg-[#FEFEFA] text-muted-foreground shadow-soft transition-colors hover:bg-[#F0EBE5] hover:text-primary",
           )}
         >
           {collapsed
@@ -98,33 +104,25 @@ export function AdminSidebar({ user, className, org }: { user?: User; className?
       </aside>
 
       {/* Mobile top bar */}
-      <div className="hidden md:flex fixed inset-x-0 top-0 z-40 h-14 items-center gap-3 border-b border-[#E0E0E0] bg-white px-4 xl:hidden" suppressHydrationWarning>
+      <div className="hidden md:flex fixed inset-x-0 top-0 z-40 h-14 items-center gap-3 border-b border-[#DED8CF]/50 bg-[#FEFEFA]/80 backdrop-blur-md px-4 xl:hidden" suppressHydrationWarning>
         {mounted ? (
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="size-9 shrink-0">
-                <Menu className="size-5" />
+                <Menu className="size-5 text-foreground" />
                 <span className="sr-only">Open menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-60 bg-white p-0 text-[#212121] border-r border-[#E0E0E0]">
+            <SheetContent side="left" className="w-60 bg-[#FEFEFA] p-0 text-foreground border-r border-[#DED8CF]/50">
               <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               <div className="absolute right-3 top-3 z-10">
-                {/* <Button
-                  variant="icon"
-                  size="icon"
-                  className="size-8 text-[#616161]"
-                  onClick={() => setOpen(false)}
-                >
-                  <X className="size-4" />
-                </Button> */}
               </div>
               <NavContent pathname={pathname} onNavigate={() => setOpen(false)} user={user} navItems={navItems} organization={org} />
             </SheetContent>
           </Sheet>
         ) : (
           <Button variant="ghost" size="icon" className="size-9 shrink-0" disabled aria-hidden="true">
-            <Menu className="size-5" />
+            <Menu className="size-5 text-foreground" />
             <span className="sr-only">Open menu</span>
           </Button>
         )}
@@ -133,8 +131,8 @@ export function AdminSidebar({ user, className, org }: { user?: User; className?
         <div className="flex items-center gap-2 min-w-0">
           <img src={org?.orgLogoUrl || "/images/ussc-logo-1.webp"} alt="Org Logo" width={24} height={24} className="size-6 object-contain shrink-0" />
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-sm font-bold bg-linear-to-r from-[#1B5E20] via-[#0D3B12] to-[#0A2E0F] bg-clip-text text-transparent shrink-0">{org?.shortName}</span>
-            <span className="inline-flex items-center rounded bg-[#1B5E20]/10 px-1 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[#1B5E20] shrink-0">Admin</span>
+            <span className="text-sm font-bold bg-linear-to-r from-primary via-[#4E5D44] to-[#3B4734] bg-clip-text text-transparent shrink-0">{org?.shortName}</span>
+            <span className="inline-flex items-center rounded bg-primary/10 px-1 py-0.5 text-[9px] font-bold uppercase tracking-widest text-primary shrink-0">Admin</span>
             {currentItem && (
               <>
                 <span className="text-muted-foreground/40 shrink-0">/</span>

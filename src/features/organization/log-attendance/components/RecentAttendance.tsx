@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -165,28 +166,19 @@ export function RecentAttendance({
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
         <div className="flex items-center gap-3">
-          <div
-            className="h-10 w-10 rounded-xl flex items-center justify-center shadow-sm"
-            style={{ background: "linear-gradient(135deg, #058C11, #38B000)" }}
-          >
-            <UsersIcon className="h-5 w-5 text-white" />
+          <div className="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center shadow-soft">
+            <UsersIcon className="h-5 w-5" />
           </div>
           <div>
-            <h3
-              className="font-nunito text-xl font-bold"
-              style={{ color: "#27500A" }}
-            >
+            <h3 className="font-serif text-xl font-bold text-foreground">
               Recent {type === "time-in" ? "Time-Ins" : "Time-Outs"}
             </h3>
-            <p
-              className="font-nunito-sans text-sm"
-              style={{ color: "#3B6D11" }}
-            >
+            <p className="text-sm text-muted-foreground">
               Students who have recently{" "}
               {type === "time-in" ? "timed in" : "timed out"} for this event
             </p>
             {hasCache && (
-              <p className="text-xs mt-0.5" style={{ color: "#3B6D11" }}>
+              <p className="text-xs mt-0.5 text-muted-foreground font-semibold">
                 Data cached {cacheAge} seconds ago
               </p>
             )}
@@ -195,22 +187,19 @@ export function RecentAttendance({
 
         {/* Controls */}
         <div className="flex items-center justify-end gap-1.5 w-full sm:w-auto">
-          <div
-            className="inline-flex items-center rounded-lg border p-0.5 w-full sm:w-auto"
-            style={{ borderColor: "#97C459", background: "#ffffff" }}
-          >
+          <div className="inline-flex items-center rounded-full border border-border/40 bg-white/60 p-1 w-full sm:w-auto">
             {/* List/Grid toggle */}
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-              className="hidden sm:flex flex-1 h-9 rounded-md text-xs font-nunito-sans font-medium transition-colors"
-              style={
+              className={cn(
+                "hidden sm:flex flex-1 h-9 rounded-full text-xs font-semibold transition-colors px-4",
                 viewMode !== "grid"
-                  ? { background: "#EAF3DE", color: "#27500A" }
-                  : { color: "#3B6D11" }
-              }
+                  ? "bg-primary/10 text-primary hover:bg-primary/20"
+                  : "text-muted-foreground hover:bg-muted"
+              )}
             >
               {viewMode === "grid" ? (
                 <>
@@ -225,10 +214,7 @@ export function RecentAttendance({
               )}
             </Button>
 
-            <div
-              className="hidden sm:block h-9 border-l mx-0.5"
-              style={{ borderColor: "#C0DD97" }}
-            />
+            <div className="hidden sm:block h-6 border-l border-border/30 mx-1" />
 
             <Button
               type="button"
@@ -236,8 +222,7 @@ export function RecentAttendance({
               size="sm"
               onClick={handleRefreshClick}
               disabled={refreshDisabled || isLoading}
-              className="flex-1 h-9 rounded-md text-xs font-nunito-sans font-medium transition-colors"
-              style={{ color: "#3B6D11" }}
+              className="flex-1 h-9 rounded-full text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors px-4"
             >
               <RefreshCcw
                 className={`h-3.5 w-3.5 mr-1.5 sm:mr-2 ${isLoading ? "animate-spin" : ""}`}
@@ -245,18 +230,14 @@ export function RecentAttendance({
               <span className="sm:inline">Refresh</span>
             </Button>
 
-            <div
-              className="h-9 border-l mx-0.5"
-              style={{ borderColor: "#C0DD97" }}
-            />
+            <div className="h-6 border-l border-border/30 mx-1" />
 
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => setShowNames(!showNames)}
-              className="flex-1 h-9 rounded-md text-xs font-nunito-sans font-medium transition-colors"
-              style={{ color: "#3B6D11" }}
+              className="flex-1 h-9 rounded-full text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors px-4"
             >
               {showNames ? (
                 <>
@@ -275,42 +256,21 @@ export function RecentAttendance({
       </div>
 
       {/* Divider */}
-      <div
-        className="h-px w-full"
-        style={{
-          background:
-            "linear-gradient(to right, transparent, #97C459, transparent)",
-        }}
-      />
+      <div className="h-px w-full bg-border/40" />
 
       {isLoading ? (
-        <div
-          className="flex justify-center items-center py-12 rounded-lg border"
-          style={{ background: "#EAF3DE", borderColor: "#97C459" }}
-        >
-          <LoaderIcon
-            className="h-8 w-8 animate-spin"
-            style={{ color: "#058C11" }}
-          />
+        <div className="flex justify-center items-center py-12 rounded-2xl border border-border/40 bg-white/60">
+          <LoaderIcon className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : records.length === 0 ? (
-        <div
-          className="text-center py-12 rounded-lg border"
-          style={{ background: "#EAF3DE", borderColor: "#97C459" }}
-        >
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-            style={{ background: "#C0DD97" }}
-          >
-            <UsersIcon className="w-8 h-8" style={{ color: "#058C11" }} />
+        <div className="text-center py-12 rounded-2xl border border-border/40 bg-white/60">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-primary/10 text-primary">
+            <UsersIcon className="w-8 h-8" />
           </div>
-          <h4
-            className="font-nunito text-lg font-semibold mb-2"
-            style={{ color: "#27500A" }}
-          >
+          <h4 className="font-serif text-lg font-bold text-foreground mb-2">
             No {type === "time-in" ? "time-ins" : "time-outs"} recorded yet
           </h4>
-          <p className="font-nunito-sans text-sm" style={{ color: "#3B6D11" }}>
+          <p className="text-sm text-muted-foreground">
             Attendance records will appear here once students start checking{" "}
             {type === "time-in" ? "in" : "out"}
           </p>
@@ -325,40 +285,12 @@ export function RecentAttendance({
                   return (
                     <div
                       key={record.id}
-                      className={`h-28 sm:h-32 rounded-lg p-3 sm:p-4 border transition-all duration-200 shadow-sm flex flex-col relative ${
+                      className={cn(
+                        "h-28 sm:h-32 rounded-2xl p-3 sm:p-4 border transition-all duration-300 shadow-xs hover:shadow-md flex flex-col relative",
                         record.remark
                           ? `${remarkStyles.border} ${remarkStyles.bg}`
-                          : ""
-                      }`}
-                      style={
-                        !record.remark
-                          ? { background: "#ffffff", borderColor: "#C0DD97" }
-                          : undefined
-                      }
-                      onMouseEnter={
-                        !record.remark
-                          ? (e) => {
-                              (
-                                e.currentTarget as HTMLElement
-                              ).style.background = "#EAF3DE";
-                              (
-                                e.currentTarget as HTMLElement
-                              ).style.borderColor = "#97C459";
-                            }
-                          : undefined
-                      }
-                      onMouseLeave={
-                        !record.remark
-                          ? (e) => {
-                              (
-                                e.currentTarget as HTMLElement
-                              ).style.background = "#ffffff";
-                              (
-                                e.currentTarget as HTMLElement
-                              ).style.borderColor = "#C0DD97";
-                            }
-                          : undefined
-                      }
+                          : "bg-white/60 border-border/40 hover:bg-white hover:border-primary/30"
+                      )}
                     >
                       {record.remark && (
                         <div className="absolute top-2 right-2">
@@ -368,17 +300,8 @@ export function RecentAttendance({
 
                       <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                         <div className="relative">
-                          <Avatar
-                            className="h-8 w-8 sm:h-10 sm:w-10 border-2 shadow-sm"
-                            style={{ borderColor: "#97C459" }}
-                          >
-                            <AvatarFallback
-                              className="font-semibold text-white text-sm"
-                              style={{
-                                background:
-                                  "linear-gradient(135deg, #058C11, #38B000)",
-                              }}
-                            >
+                          <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-border shadow-sm">
+                            <AvatarFallback className="font-semibold text-primary-foreground bg-primary text-sm">
                               {showNames
                                 ? getInitials(
                                     record.student.firstName +
@@ -389,37 +312,26 @@ export function RecentAttendance({
                             </AvatarFallback>
                           </Avatar>
                           {record.remark && (
-                            <div className="absolute -top-1 -right-1 h-3 w-3 sm:h-4 sm:w-4 rounded-full bg-red-500 border-2 border-white flex items-center justify-center">
+                            <div className="absolute -top-1 -right-1 h-3 sm:h-4 sm:w-4 rounded-full bg-red-500 border-2 border-white flex items-center justify-center">
                               <AlertTriangle className="h-1.5 w-1.5 sm:h-2 sm:w-2 text-white" />
                             </div>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p
-                            className="font-nunito font-semibold truncate text-sm sm:text-base"
-                            style={{ color: "#27500A" }}
-                          >
+                          <p className="font-sans font-bold text-foreground truncate text-sm sm:text-base">
                             {showNames
                               ? record.student.firstName +
                                 " " +
                                 record.student.lastName
                               : "Student"}
                           </p>
-                          <p
-                            className="font-nunito-sans text-xs sm:text-sm truncate"
-                            style={{ color: "#3B6D11" }}
-                          >
+                          <p className="text-xs sm:text-sm text-muted-foreground font-semibold truncate">
                             ID: {record.student.studentId}
                           </p>
                         </div>
                         <Badge
                           variant="outline"
-                          className="flex items-center font-nunito-sans font-semibold text-xs"
-                          style={{
-                            background: "#EAF3DE",
-                            color: "#27500A",
-                            borderColor: "#97C459",
-                          }}
+                          className="flex items-center font-semibold text-xs bg-primary/10 text-primary border-primary/25"
                         >
                           <CheckCircleIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
                           Success
@@ -427,12 +339,9 @@ export function RecentAttendance({
                       </div>
 
                       <div className="flex justify-between items-end mt-auto">
-                        <div
-                          className="flex items-center text-xs sm:text-sm"
-                          style={{ color: "#3B6D11" }}
-                        >
-                          <ClockIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 sm:mr-1.5" />
-                          <span className="font-nunito-sans font-medium">
+                        <div className="flex items-center text-xs sm:text-sm text-muted-foreground font-semibold">
+                          <ClockIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 sm:mr-1.5 text-primary" />
+                          <span>
                             {formatTime(
                               type === "time-in"
                                 ? record.timeIn
@@ -461,40 +370,12 @@ export function RecentAttendance({
                   return (
                     <div
                       key={record.id}
-                      className={`rounded-lg p-4 border transition-all duration-200 shadow-sm relative ${
+                      className={cn(
+                        "rounded-2xl p-4 border transition-all duration-300 shadow-xs hover:shadow-md relative",
                         record.remark
                           ? `${remarkStyles.border} ${remarkStyles.bg}`
-                          : ""
-                      }`}
-                      style={
-                        !record.remark
-                          ? { background: "#ffffff", borderColor: "#C0DD97" }
-                          : undefined
-                      }
-                      onMouseEnter={
-                        !record.remark
-                          ? (e) => {
-                              (
-                                e.currentTarget as HTMLElement
-                              ).style.background = "#EAF3DE";
-                              (
-                                e.currentTarget as HTMLElement
-                              ).style.borderColor = "#97C459";
-                            }
-                          : undefined
-                      }
-                      onMouseLeave={
-                        !record.remark
-                          ? (e) => {
-                              (
-                                e.currentTarget as HTMLElement
-                              ).style.background = "#ffffff";
-                              (
-                                e.currentTarget as HTMLElement
-                              ).style.borderColor = "#C0DD97";
-                            }
-                          : undefined
-                      }
+                          : "bg-white/60 border-border/40 hover:bg-white hover:border-primary/30"
+                      )}
                     >
                       {record.remark && (
                         <div className="absolute top-4 right-4">
@@ -505,17 +386,8 @@ export function RecentAttendance({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div className="relative">
-                            <Avatar
-                              className="h-9 w-9 border-2 shadow-sm"
-                              style={{ borderColor: "#97C459" }}
-                            >
-                              <AvatarFallback
-                                className="font-semibold text-white text-sm"
-                                style={{
-                                  background:
-                                    "linear-gradient(135deg, #058C11, #38B000)",
-                                }}
-                              >
+                            <Avatar className="h-9 w-9 border-2 border-border shadow-sm">
+                              <AvatarFallback className="font-semibold text-primary-foreground bg-primary text-sm">
                                 {showNames
                                   ? getInitials(
                                       record.student.firstName +
@@ -532,21 +404,15 @@ export function RecentAttendance({
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3">
-                              <p
-                                className="font-nunito font-semibold truncate"
-                                style={{ color: "#27500A" }}
-                              >
+                            <div className="flex flex-wrap items-center gap-3">
+                              <p className="font-sans font-bold text-foreground truncate">
                                 {showNames
                                   ? record.student.firstName +
                                     " " +
                                     record.student.lastName
                                   : "Student"}
                               </p>
-                              <p
-                                className="font-nunito-sans text-sm"
-                                style={{ color: "#3B6D11" }}
-                              >
+                              <p className="text-sm text-muted-foreground font-semibold">
                                 ID: {record.student.studentId}
                               </p>
                               {record.remark && (
@@ -562,12 +428,9 @@ export function RecentAttendance({
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          <div
-                            className="flex items-center text-sm"
-                            style={{ color: "#3B6D11" }}
-                          >
-                            <ClockIcon className="h-3.5 w-3.5 mr-1.5" />
-                            <span className="font-nunito-sans font-medium">
+                          <div className="flex items-center text-sm text-muted-foreground font-semibold">
+                            <ClockIcon className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                            <span>
                               {formatTime(
                                 type === "time-in"
                                   ? record.timeIn
@@ -577,12 +440,7 @@ export function RecentAttendance({
                           </div>
                           <Badge
                             variant="outline"
-                            className="flex items-center font-nunito-sans font-semibold"
-                            style={{
-                              background: "#EAF3DE",
-                              color: "#27500A",
-                              borderColor: "#97C459",
-                            }}
+                            className="flex items-center font-bold bg-primary/10 text-primary border-primary/25"
                           >
                             <CheckCircleIcon className="h-3 w-3 mr-1" />
                             Success
@@ -602,18 +460,10 @@ export function RecentAttendance({
               <Button
                 asChild
                 variant="outline"
-                className="font-nunito-sans font-medium shadow-sm transition-all duration-200 hover:scale-[1.02]"
-                style={{
-                  borderColor: "#97C459",
-                  color: "#27500A",
-                  background: "#ffffff",
-                }}
+                className="cursor-pointer hover:scale-105"
               >
                 <Link href={attendeesUrl}>
-                  <UsersIcon
-                    className="h-4 w-4 mr-2"
-                    style={{ color: "#058C11" }}
-                  />
+                  <UsersIcon className="h-4 w-4 mr-2 text-primary" />
                   View All Attendees
                 </Link>
               </Button>

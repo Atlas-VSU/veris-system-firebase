@@ -151,9 +151,8 @@ export function AttendanceForm({
         if (event.status === "completed") {
           return `${studentName} - Special attendance logged for ${event.name}.`;
         }
-        return `${studentName} has successfully ${
-          type === "time-in" ? "checked in" : "checked out"
-        } for ${event.name}.`;
+        return `${studentName} has successfully ${type === "time-in" ? "checked in" : "checked out"
+          } for ${event.name}.`;
       };
 
       toast.success(getMessage());
@@ -196,7 +195,7 @@ export function AttendanceForm({
     title: "",
     description: "",
     type: "program",
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -281,9 +280,8 @@ export function AttendanceForm({
         if (event.status === "completed") {
           return `${studentName} - Special attendance logged for ${event.name}.`;
         }
-        return `${studentName} has successfully ${
-          type === "time-in" ? "checked in" : "checked out"
-        } for ${event.name}.`;
+        return `${studentName} has successfully ${type === "time-in" ? "checked in" : "checked out"
+          } for ${event.name}.`;
       };
 
       toast.success(getMessage());
@@ -324,38 +322,24 @@ export function AttendanceForm({
   const isTimeIn = type === "time-in";
   const ModeIcon = isTimeIn ? LogInIcon : LogOutIcon;
 
-  // Banner: time-in uses green system, time-out stays amber (intentional semantic contrast)
-  const bannerStyle = isTimeIn
-    ? { background: "#C0DD97", color: "#27500A" }
-    : undefined;
+  // Banner: time-in uses green system, time-out stays secondary (clay/terracotta)
+  const outerBorderClass = isTimeIn
+    ? "border-primary/30"
+    : "border-secondary/30";
+
   const bannerClass = isTimeIn
-    ? ""
-    : "bg-amber-100 text-amber-800";
+    ? "bg-primary text-primary-foreground"
+    : "bg-secondary text-secondary-foreground";
 
-  const outerBorderStyle = isTimeIn
-    ? { borderColor: "#97C459" }
-    : undefined;
-  const outerBorderClass = isTimeIn ? "" : "border-amber-200";
+  const iconContainerClass = isTimeIn
+    ? "bg-primary/10 text-primary"
+    : "bg-secondary/15 text-secondary";
 
-  const modeNoticeStyle = isTimeIn
-    ? { background: "#EAF3DE", color: "#3B6D11", borderColor: "#C0DD97" }
-    : undefined;
-  const modeNoticeClass = isTimeIn ? "" : "bg-amber-50 text-amber-700 border-amber-200";
-
-  const iconContainerStyle = isTimeIn
-    ? { background: "#EAF3DE" }
-    : undefined;
-  const iconContainerClass = isTimeIn ? "" : "bg-amber-100";
-
-  const iconStyle = isTimeIn ? { color: "#058C11" } : undefined;
-  const iconClass = isTimeIn ? "" : "text-amber-700";
+  const iconClass = "";
 
   const switchBtnClass = isTimeIn
-    ? "bg-amber-600 hover:bg-amber-700 text-white"
-    : "";
-  const switchBtnStyle = !isTimeIn
-    ? { background: "#058C11", color: "#ffffff" }
-    : undefined;
+    ? "bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-soft font-bold rounded-full text-xs transition-all active:scale-95 cursor-pointer"
+    : "bg-primary text-primary-foreground hover:bg-primary/95 shadow-soft font-bold rounded-full text-xs transition-all active:scale-95 cursor-pointer";
 
   return (
     <>
@@ -396,20 +380,18 @@ export function AttendanceForm({
         description={warningDialog.description}
         warningType={warningDialog.type}
         studentName={warningDialog.studentName}
-    />
+      />
 
       <div
-        className={cn("space-y-0 rounded-xl border transition-colors overflow-hidden", outerBorderClass)}
-        style={outerBorderStyle}
+        className={cn("space-y-0 rounded-3xl border transition-colors overflow-hidden", outerBorderClass)}
       >
         {/* Status Banner - Always visible to prevent mode confusion */}
         <div
-          className={cn("px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between", bannerClass)}
-          style={bannerStyle}
+          className={cn("px-5 py-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between", bannerClass)}
         >
           <div className="flex items-center gap-2">
             <ModeIcon className="h-5 w-5" />
-            <span className="font-nunito font-bold text-base tracking-wide">
+            <span className="font-serif font-bold text-base tracking-wide">
               {isTimeIn ? "CHECK-IN MODE" : "CHECK-OUT MODE"}
             </span>
           </div>
@@ -419,8 +401,7 @@ export function AttendanceForm({
               variant="secondary"
               size="sm"
               onClick={() => onTabChange(isTimeIn ? "time-out" : "time-in")}
-              className={cn("w-full sm:w-auto mt-1 sm:mt-0 font-bold rounded-lg text-xs shadow transition-all", switchBtnClass)}
-              style={switchBtnStyle}
+              className={switchBtnClass}
             >
               {isTimeIn ? (
                 <><TimerIcon className="h-4 w-4 mr-1.5" />Switch to Check-Out</>
@@ -431,26 +412,21 @@ export function AttendanceForm({
           )}
         </div>
 
-        <div className="px-4 sm:px-6 pt-5 pb-5 sm:pb-6 space-y-5">
+        <div className="px-5 sm:px-6 pt-5 pb-5 sm:pb-6 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="flex items-center gap-3">
               <div
-                className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", iconContainerClass)}
-                style={iconContainerStyle}
+                className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0", iconContainerClass)}
               >
                 <ModeIcon
                   className={cn("h-5 w-5", iconClass)}
-                  style={iconStyle}
                 />
               </div>
               <div>
-                <h3
-                  className="font-nunito text-base font-bold"
-                  style={{ color: "#27500A" }}
-                >
+                <h3 className="font-serif text-lg font-bold text-foreground">
                   {isTimeIn ? "Check-In" : "Check-Out"} Station
                 </h3>
-                <p className="font-nunito-sans text-xs mt-0.5" style={{ color: "#3B6D11" }}>
+                <p className="text-xs text-muted-foreground mt-0.5 font-semibold">
                   {isTimeIn
                     ? "Record student attendance for this event"
                     : "Record student departure from this event"}
@@ -462,12 +438,7 @@ export function AttendanceForm({
               variant="outline"
               size="sm"
               onClick={() => setShowNames(!showNames)}
-              className="h-9 px-3 font-medium text-xs w-full sm:w-auto shadow-sm transition-all duration-200 hover:scale-[1.02]"
-              style={{
-                borderColor: "#97C459",
-                color: "#27500A",
-                background: "#ffffff",
-              }}
+              className="h-9 px-4 rounded-full font-semibold text-xs w-full sm:w-auto shadow-soft transition-all duration-200 hover:scale-[1.02] cursor-pointer"
             >
               {showNames ? (
                 <><EyeOffIcon className="h-3.5 w-3.5 mr-1.5" />Hide Names</>
@@ -480,15 +451,19 @@ export function AttendanceForm({
 
           {/* Mode notice */}
           <div
-            className={cn("rounded-lg px-4 py-3 flex items-center gap-2 text-sm font-medium border", modeNoticeClass)}
-            style={modeNoticeStyle}
+            className={cn(
+              "rounded-2xl px-4 py-3 flex items-center gap-2 text-sm font-semibold border",
+              isTimeIn
+                ? "bg-primary/10 text-primary border-primary/20"
+                : "bg-secondary/15 text-secondary border-secondary/20"
+            )}
           >
             {isTimeIn ? (
               <CheckCircle2Icon className="h-4 w-4 shrink-0" />
             ) : (
               <CircleAlertIcon className="h-4 w-4 shrink-0" />
             )}
-            <p className="font-nunito-sans">
+            <p className="font-sans">
               {isTimeIn
                 ? "You are recording student arrivals (check-ins) for this event."
                 : "You are recording student departures (check-outs) for this event."}
@@ -496,10 +471,7 @@ export function AttendanceForm({
           </div>
 
           {/* Search form */}
-          <div
-            className="rounded-xl border p-5"
-            style={{ background: "#ffffff", borderColor: "#C0DD97" }}
-          >
+          <div className="rounded-3xl border border-border/40 bg-white/60 p-5 shadow-xs">
             <Tabs
               defaultValue="id"
               onValueChange={(value) => setSearchMethod(value as "id" | "name")}
@@ -622,10 +594,9 @@ export function AttendanceForm({
                       variant="outline"
                       size="sm"
                       onClick={handleCancelSearch}
-                      className="h-9"
-                      style={{ borderColor: "#97C459", color: "#27500A" }}
+                      className="h-9 rounded-full cursor-pointer hover:scale-105"
                     >
-                      <XCircleIcon className="h-4 w-4 mr-2" style={{ color: "#058C11" }} />
+                      <XCircleIcon className="h-4 w-4 mr-2 text-primary" />
                       Clear Results
                     </Button>
                   </div>

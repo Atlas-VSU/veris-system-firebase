@@ -66,31 +66,31 @@ export const WarningDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md rounded-3xl">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-1">
-            <div className={`p-2 rounded-lg shrink-0 ${styles.iconBg}`}>
+            <div className={`p-2 rounded-full shrink-0 ${styles.iconBg}`}>
               <span className={styles.iconColor}>{styles.icon}</span>
             </div>
             <DialogTitle
-              className={`font-nunito text-base font-bold ${styles.titleColor}`}
+              className={`font-serif text-base font-bold ${styles.titleColor}`}
             >
               {title}
             </DialogTitle>
           </div>
-          <DialogDescription className="font-nunito-sans text-sm text-muted-foreground leading-relaxed">
+          <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
             {description}
           </DialogDescription>
         </DialogHeader>
 
-        <div className={`mt-2 p-4 rounded-xl border ${styles.noticeBg}`}>
+        <div className={`mt-2 p-4 rounded-2xl border ${styles.noticeBg}`}>
           <div className="flex items-start gap-3">
             <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
             <div>
-              <p className="font-nunito-sans text-xs font-bold text-foreground uppercase tracking-wider mb-1">
+              <p className="text-xs font-bold text-foreground uppercase tracking-wider mb-1">
                 Important Notice
               </p>
-              <p className="font-nunito-sans text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 You are about to record attendance for a student who may not be
                 authorized for this event. This action will be logged in the
                 system.
@@ -103,15 +103,14 @@ export const WarningDialog = ({
           <Button
             variant="outline"
             onClick={onCancel}
-            className="flex-1"
-            style={{ borderColor: "#97C459", color: "#27500A" }}
+            className="flex-1 rounded-full cursor-pointer hover:scale-105"
           >
             Cancel
           </Button>
           <Button
             variant={styles.buttonVariant}
             onClick={onConfirm}
-            className="flex-1"
+            className="flex-1 rounded-full cursor-pointer hover:scale-105"
           >
             Proceed Anyway
           </Button>
@@ -119,4 +118,4 @@ export const WarningDialog = ({
       </DialogContent>
     </Dialog>
   );
-};
+}

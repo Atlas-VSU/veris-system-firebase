@@ -11,7 +11,7 @@ import { PaymentType, Term } from "@/constants/types";
 import { buildClearanceId, recalculateClearanceStatus } from "./clearance";
 import { recalculateFines } from "./fines/update/recalculate";
 import { cacheService, CACHE_KEYS, CACHE_DURATIONS } from "@/services/cacheService";
-import { FeeItem } from "@/app/(public)/payment/page";
+import { FeeItem } from "@/features/organization/payments/types";
 import { updateFeeStats, updateFineStats } from "./stats/update/updateStats";
 import { getActiveTerm } from "./term";
 

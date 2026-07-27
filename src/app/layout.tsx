@@ -1,5 +1,5 @@
 "use client";
-import { Montserrat } from "next/font/google";
+import { Montserrat, Fraunces, Nunito } from "next/font/google";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AuthProvider } from "@/context/AuthContext";
@@ -13,6 +13,18 @@ const montserrat = Montserrat({
   weight: ["200", "300", "400", "500", "600", "700", "800", "900"],
 });
 
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+});
+
+const nunito = Nunito({
+  variable: "--font-nunito",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -21,20 +33,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <title>USSC Connect</title>
+        <title>VERIS System</title>
         <meta
           name="description"
           content="Your platform for modern productivity and collaboration"
         />
-        <link rel="icon" href="/images/ussc-logo-1.webp" />
+        <link rel="icon" href="/favicon.svg" />
         <link rel="apple-touch-icon" href="/images/enhanced-logo-final.png" />
         <meta name="theme-color" content="#3b82f6" />
       </head>
       <body
-        className={`${montserrat.variable} antialiased`}
+        className={`${montserrat.variable} ${fraunces.variable} ${nunito.variable} antialiased`}
         suppressHydrationWarning
       >
-        <NextTopLoader  
+        <NextTopLoader
           color="var(--accent)"
           shadow="0 0 10px var(--accent), 0 0 5px var(--accent)"
         />

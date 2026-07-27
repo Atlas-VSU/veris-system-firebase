@@ -48,37 +48,21 @@ export function AttendanceInterface({
       />
 
       {/* Attendance Form */}
-      <div
-        className="rounded-xl"
-        style={{
-          background: "linear-gradient(135deg, #ffffff 10%, #EAF3DE 100%, #C0DD97 100%)",
-          boxShadow: "0 4px 24px 0 rgba(5,140,17,0.08)",
-        }}
-      >
-        <div className="p-4 sm:p-6">
-          <AttendanceForm
-            event={event}
-            type={activeTab}
-            onSubmit={handleSubmit}
-            hasTimeIn={hasTimeIn}
-            hasTimeOut={hasTimeOut}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-        </div>
+      <div className="bg-[#FEFEFA] border border-border/50 rounded-3xl p-4 sm:p-6 shadow-soft">
+        <AttendanceForm
+          event={event}
+          type={activeTab}
+          onSubmit={handleSubmit}
+          hasTimeIn={hasTimeIn}
+          hasTimeOut={hasTimeOut}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
       </div>
 
       {/* Recent Activity */}
-      <div
-        className="rounded-xl"
-        style={{
-          background: "linear-gradient(135deg, #ffffff 10%, #EAF3DE 100%, #C0DD97 100%)",
-          boxShadow: "0 4px 24px 0 rgba(5,140,17,0.08)",
-        }}
-      >
-        <div className="p-4 sm:p-6">
-          <RecentAttendance eventId={event.id.toString()} type={activeTab} />
-        </div>
+      <div className="bg-[#FEFEFA] border border-border/50 rounded-3xl p-4 sm:p-6 shadow-soft">
+        <RecentAttendance eventId={event.id.toString()} type={activeTab} />
       </div>
     </div>
   );

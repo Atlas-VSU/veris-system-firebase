@@ -169,12 +169,12 @@ export const createOnlineProofOfPayment = async (
 
 
 export const createOfflineFinesProofOfPayment = async (
-  payment: PaymentFormData, type: string, fine: StudentFines, fineItems?: FineItem[]) => {
+  payment: PaymentFormData, type: string, fine: StudentFines, fineItems?: FineItem[], selectedTerm?: Term) => {
   const items = [];
     const currentUser = await getCurrentUserData() as unknown as Member;
     try {
-      const transaction = await getFineByStudentId(payment.studentId);
-      const term = await getActiveTerm();
+      const term =  selectedTerm || await getActiveTerm();
+      const transaction = await getFineByStudentId(payment.studentId, term!);
       
       for (const item of fineItems?.filter(f => !f.isPaid) ?? []) { 
         items.push({

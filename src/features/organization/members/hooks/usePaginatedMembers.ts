@@ -13,8 +13,8 @@ import {
   updateMembersCache,
   clearMembersCache,
 } from "../services/membersCache";
-import { getActiveTerm } from "@/firebase/term";
 import { Term } from "@/constants/types";
+import { useTermPeriod } from "../../term/hooks/useTermPeriod";
 
 const ITEMS_PER_PAGE_CARD = 12;
 const ITEMS_PER_PAGE_TABLE = 10;
@@ -63,6 +63,8 @@ export function usePaginatedMembers() {
     cursorStack.current = [null];
     setCurrentPage(1);
   }, []);
+
+  const { selected: _term } = useTermPeriod();
 
   // ─── Static data loader ───────────────────────────────────────────────────
   const loadStaticData = useCallback(async (forceRefresh = false) => {
@@ -131,8 +133,6 @@ export function usePaginatedMembers() {
         forceRefresh = false,
         needCount = false,
       } = params;
-
-      const _term = await getActiveTerm();
 
       // Cursor for this page: stack index = page - 1
       const lastDoc = cursorStack.current[page - 1] ?? null;

@@ -217,7 +217,7 @@ export function MembersPage() {
       <PageHeader
         variant="admin"
         title="Members"
-        context={`${term.semester} Semester · A.Y. ${term.AY}`}
+        context={`${term?.semester || ""} Semester · A.Y. ${term?.AY || ""}`}
         description={`${totalMembers} total member${totalMembers !== 1 ? "s" : ""} in your organization`}
         action={
           <div className="hidden lg:flex items-center gap-2">

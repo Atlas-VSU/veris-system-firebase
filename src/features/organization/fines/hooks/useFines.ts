@@ -48,13 +48,14 @@ export function useFines({ initialStatusFilter = "all", itemsPerPage = 9 }: UseF
 
         //Fetch current term
         const term = selected || await getActiveTerm();
+        if (!term) return; // No active term yet — skip stats fetch
 
         //  Fetch stats and term (these could be optimized with a single server-side call)
         const [studentsCount, unsettledCount,stats, seed] = await Promise.all([
           countStudentsWithFines(selected),
           countUnsettleFinesOfStudents(selected),
-          getStats(`${term!.AY}-${term!.semester}-${currUser.orgId}`),
-          checkFineSeededForTerm(currUser.orgId!, {AY: term!.AY, semester: term!.semester})
+          getStats(`${term.AY}-${term.semester}-${currUser.orgId}`),
+          checkFineSeededForTerm(currUser.orgId!, {AY: term.AY, semester: term.semester})
         ]);
         if (isMounted) {
           setTotalStudentsWithFines(studentsCount);

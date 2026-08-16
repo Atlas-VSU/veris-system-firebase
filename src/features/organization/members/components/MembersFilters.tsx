@@ -117,7 +117,14 @@ export function MembersFilters({
           disabled={disabled}
         >
           <SelectTrigger className={`w-full h-10 ${lightSelectTriggerClass}`}>
-            <SelectValue placeholder="Filter by program" />
+            <SelectValue placeholder="Filter by program">
+              {programFilter === "all"
+                ? "All Programs"
+                : (() => {
+                    const p = programs.find((p) => p.id === programFilter);
+                    return p ? (p.shortName || p.acronym || p.name) : "All Programs";
+                  })()}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent className={lightSelectContentClass}>
             <SelectItem value="all" className={lightSelectItemClass}>
@@ -129,7 +136,12 @@ export function MembersFilters({
                 value={program.id}
                 className={lightSelectItemClass}
               >
-                {program.name}
+                <span className="flex flex-col">
+                  <span className="font-medium">{program.shortName || program.acronym || program.name}</span>
+                  {(program.shortName || program.acronym) && (
+                    <span className="text-xs text-gray-400 truncate max-w-[200px]">{program.name}</span>
+                  )}
+                </span>
               </SelectItem>
             ))}
           </SelectContent>
@@ -192,8 +204,15 @@ export function MembersFilters({
             onValueChange={onProgramFilter}
             disabled={disabled}
           >
-            <SelectTrigger className={`w-[160px] h-9 ${lightSelectTriggerClass}`}>
-              <SelectValue placeholder="All Programs" />
+            <SelectTrigger className={`w-[180px] h-9 ${lightSelectTriggerClass}`}>
+              <SelectValue placeholder="All Programs">
+                {programFilter === "all"
+                  ? "All Programs"
+                  : (() => {
+                      const p = programs.find((p) => p.id === programFilter);
+                      return p ? (p.shortName || p.acronym || p.name) : "All Programs";
+                    })()}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className={lightSelectContentClass}>
               <SelectItem value="all" className={lightSelectItemClass}>
@@ -205,7 +224,12 @@ export function MembersFilters({
                   value={program.id}
                   className={lightSelectItemClass}
                 >
-                  {program.name}
+                  <span className="flex flex-col">
+                    <span className="font-medium">{program.shortName || program.acronym || program.name}</span>
+                    {(program.shortName || program.acronym) && (
+                      <span className="text-xs text-gray-400 truncate max-w-[200px]">{program.name}</span>
+                    )}
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>

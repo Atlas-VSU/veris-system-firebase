@@ -121,9 +121,9 @@ export function MembersFilters({
               {programFilter === "all"
                 ? "All Programs"
                 : (() => {
-                    const p = programs.find((p) => p.id === programFilter);
-                    return p ? (p.shortName || p.acronym || p.name) : "All Programs";
-                  })()}
+                  const p = programs.find((p) => p.id === programFilter);
+                  return p ? (p.shortName || p.acronym || p.name) : "All Programs";
+                })()}
             </SelectValue>
           </SelectTrigger>
           <SelectContent className={lightSelectContentClass}>
@@ -137,10 +137,8 @@ export function MembersFilters({
                 className={lightSelectItemClass}
               >
                 <span className="flex flex-col">
-                  <span className="font-medium">{program.shortName || program.acronym || program.name}</span>
-                  {(program.shortName || program.acronym) && (
-                    <span className="text-xs text-gray-400 truncate max-w-[200px]">{program.name}</span>
-                  )}
+                  <span className="font-medium">{program.shortName || program.acronym}</span>
+                  {(program.shortName || program.acronym)}
                 </span>
               </SelectItem>
             ))}
@@ -209,9 +207,9 @@ export function MembersFilters({
                 {programFilter === "all"
                   ? "All Programs"
                   : (() => {
-                      const p = programs.find((p) => p.id === programFilter);
-                      return p ? (p.shortName || p.acronym || p.name) : "All Programs";
-                    })()}
+                    const p = programs.find((p) => p.id === programFilter);
+                    return p ? (p.shortName || p.acronym) : "All Programs";
+                  })()}
               </SelectValue>
             </SelectTrigger>
             <SelectContent className={lightSelectContentClass}>
@@ -226,9 +224,6 @@ export function MembersFilters({
                 >
                   <span className="flex flex-col">
                     <span className="font-medium">{program.shortName || program.acronym || program.name}</span>
-                    {(program.shortName || program.acronym) && (
-                      <span className="text-xs text-gray-400 truncate max-w-[200px]">{program.name}</span>
-                    )}
                   </span>
                 </SelectItem>
               ))}

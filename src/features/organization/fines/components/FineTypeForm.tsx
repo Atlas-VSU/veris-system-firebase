@@ -19,14 +19,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Switch } from "@/components/ui/switch"; 
+import { Switch } from "@/components/ui/switch";
 import { FineType } from "../types";
 import { useFineTypeForm } from "../hooks/useFineTypeForm";
 import { FineTypeFormData } from "@/lib/validators";
 
 interface FineTypeFormProps {
   initialData?: FineType;
-  open: boolean;  
+  open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (fineType: FineType) => void;
   onCancel: () => void;
@@ -63,7 +63,7 @@ export function FineTypeForm({
         name: "",
         description: "",
         defaultAmount: 0,
-        requiresTimeIn: true, 
+        requiresTimeIn: true,
         requiresTimeOut: false,
         majorEventsOnly: false,
       });
@@ -83,14 +83,14 @@ export function FineTypeForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-white max-w-4xl w-[90vw] max-h-[80vh] overflow-y-auto py-8 border-none">
+      <DialogContent className="bg-white sm:max-w-[520px] w-[92vw] sm:w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 rounded-xl border border-gray-200 shadow-xl [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <DialogHeader className="pb-2">
-          <DialogTitle className="text-xl text-[#1B5E20] font-bold uppercase">{initialData ? "Edit a Type of Fine" : "Add a Type of Fines"}</DialogTitle>
+          <DialogTitle className="text-xl text-[#1B5E20] font-bold uppercase">{initialData ? "Edit a Type of Fine" : "Add a Type of Fine"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleFormSubmit)}
-            className="space-y-4 overflow-y-auto"
+            className="space-y-4"
           >
             <div className="space-y-3">
               <FormField
@@ -99,13 +99,12 @@ export function FineTypeForm({
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex justify-between">
-                    <FormLabel className="text-[#1B5E20] font-semibold">Name of Fine</FormLabel>
-                    <span
-                        className={`text-xs tabular-nums ${
-                          field.value?.length > MAX_TITLE
+                      <FormLabel className="text-[#1B5E20] font-semibold">Name of Fine</FormLabel>
+                      <span
+                        className={`text-xs tabular-nums ${field.value?.length > MAX_TITLE
                             ? "text-destructive"
                             : "text-[#2E7D32]/60"
-                        }`}
+                          }`}
                       >
                         {field.value?.length}/{MAX_TITLE}
                       </span>
@@ -123,17 +122,16 @@ export function FineTypeForm({
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex justify-between">
-                    <FormLabel className="text-[#1B5E20] font-semibold">Description</FormLabel>
-                    <span
-                        className={`text-xs tabular-nums ${
-                          field.value?.length > MAX_DESCRIPTION
+                      <FormLabel className="text-[#1B5E20] font-semibold">Description</FormLabel>
+                      <span
+                        className={`text-xs tabular-nums ${field.value?.length > MAX_DESCRIPTION
                             ? "text-destructive"
                             : "text-[#2E7D32]/60"
-                        }`}
+                          }`}
                       >
                         {field.value?.length}/{MAX_DESCRIPTION}
                       </span>
-                      </div>
+                    </div>
                     <FormControl>
                       <Input {...field} maxLength={MAX_DESCRIPTION} className="!bg-white text-black placeholder:text-gray-600 border-[#2E7D32]/30" />
                     </FormControl>
@@ -148,10 +146,10 @@ export function FineTypeForm({
                   <FormItem>
                     <FormLabel className="text-[#1B5E20] font-semibold">Amount per Sign</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="0" 
-                        {...field} 
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        {...field}
                         onChange={(e) => field.onChange(e.target.valueAsNumber)}
                         className="!bg-white text-black placeholder:text-gray-600 border-[#2E7D32]/30"
                       />
@@ -161,7 +159,7 @@ export function FineTypeForm({
                 )}
               />
 
-               <FormField
+              <FormField
                 control={form.control}
                 name="requiresTimeOut"
                 render={({ field }) => (
@@ -179,7 +177,7 @@ export function FineTypeForm({
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="majorEventsOnly"
                 render={({ field }) => (
@@ -198,13 +196,13 @@ export function FineTypeForm({
               />
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="pt-2">
               <LoadingButton variant="outline" onClick={onCancel} disabled={isSubmitting}>
                 Cancel
               </LoadingButton>
-              <LoadingButton 
+              <LoadingButton
                 variant="success"
-                type="submit" 
+                type="submit"
                 isLoading={isSubmitting}
                 loadingText={initialData ? "Saving..." : "Adding..."}
               >

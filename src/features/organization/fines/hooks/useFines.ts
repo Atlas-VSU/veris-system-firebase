@@ -7,7 +7,6 @@ import { CACHE_KEYS, cacheService } from "@/services/cacheService";
 import { getStats } from "@/firebase/stats/read/getStats";
 import { getActiveTerm } from "@/firebase/term";
 import { useTermPeriod } from "../../term/hooks/useTermPeriod";
-import { set } from "zod";
 
 
 interface UseFinesProps {
@@ -38,20 +37,27 @@ export function useFines({ initialStatusFilter = "all", itemsPerPage = 9 }: UseF
     
     const fetchData = async () => {
       const currUser = await getCurrentUserData() as unknown as Member;
-      if (!currUser?.id) return;
+      if (!currUser?.id) {
+        if (isMounted) setIsLoading(false);
+        return;
+      }
 
       setIsLoading(true);
       try {
+        //Fetch current term first — if it's not ready yet, bail out cleanly
+        // (the effect will re-run once `selected` resolves from Zustand)
+        const term = selected || await getActiveTerm();
+        if (!term) {
+          if (isMounted) setIsLoading(false);
+          return; // No active term yet — skip stats fetch
+        }
+
         // Fetch total count for the current filter
         const count = await getFinesCount(currUser.orgId!, filterStatus, search, selected);
         if (isMounted) setTotalCount(count);
 
-        //Fetch current term
-        const term = selected || await getActiveTerm();
-        if (!term) return; // No active term yet — skip stats fetch
-
         //  Fetch stats and term (these could be optimized with a single server-side call)
-        const [studentsCount, unsettledCount,stats, seed] = await Promise.all([
+        const [studentsCount, unsettledCount, stats, seed] = await Promise.all([
           countStudentsWithFines(selected),
           countUnsettleFinesOfStudents(selected),
           getStats(`${term.AY}-${term.semester}-${currUser.orgId}`),

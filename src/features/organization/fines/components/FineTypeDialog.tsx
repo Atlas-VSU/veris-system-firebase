@@ -1,13 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { 
-  Plus, 
-  Trash2, 
-  AlertCircle, 
-  Clock, 
-  Calendar, 
-  Power, 
+import {
+  Plus,
+  Trash2,
+  AlertCircle,
+  Clock,
+  Calendar,
+  Power,
   Edit,
   X,
   Check,
@@ -75,14 +75,14 @@ export function FineTypeDialog({
       setShowAddForm(false)
     } catch (error) {
       console.error('Failed to add fine type:', error)
-    } finally { 
+    } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleEditSubmit = async (data: FineType) => {
     if (!editingFine?.id) return
-    
+
     try {
       setIsSubmitting(true)
       await onUpdateFineType(editingFine.id, data)
@@ -96,7 +96,7 @@ export function FineTypeDialog({
 
   const handleDelete = async () => {
     if (!deleteTarget?.id) return
-    
+
     try {
       setIsSubmitting(true)
       await onDeleteFineType(deleteTarget.id)
@@ -134,7 +134,7 @@ export function FineTypeDialog({
       {/* Main Dialog */}
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="bg-white max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-0 gap-0 border-none">
-        
+
           <DialogHeader className="p-6 pb-2 sticky top-0 bg-white z-10 border-b">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -143,12 +143,8 @@ export function FineTypeDialog({
                   Manage fine types, their amounts, and requirements.
                 </DialogDescription>
               </div>
-              <DialogClose className="absolute right-4 top-4 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:text-muted-foreground z-20 p-0 rounded-md border-transparent hover:scale-125 hover:text-accent-foreground focus-visible:ring-accent/50 data-[state=open]:bg-accent">
-                <X className="h-4 w-4 text-muted-foreground" />
-                <span className="sr-only">Close</span>
-              </DialogClose>
-              <Button 
-                onClick={() => setShowAddForm(true)} 
+              <Button
+                onClick={() => setShowAddForm(true)}
                 size="sm"
                 variant="success"
                 className="gap-1.5 w-full sm:w-auto"
@@ -164,18 +160,7 @@ export function FineTypeDialog({
             {showAddForm && (
               <Card className="border-2 border-primary/20">
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-semibold">Add New Fine Type</CardTitle>
-                    <Button 
-                      variant="icon" 
-                      size="sm" 
-                      onClick={() => setShowAddForm(false)}
-                      disabled={isSubmitting}
-                      className="h-8 w-8 p-0"
-                    >
-                      <X className="size-4" />
-                    </Button>
-                  </div>
+                  <CardTitle className="text-sm font-semibold">Add New Fine Type</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <FineTypeForm
@@ -194,18 +179,7 @@ export function FineTypeDialog({
             {editingFine && (
               <Card className="border-2 border-primary/20">
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-semibold">Edit Fine Type</CardTitle>
-                    <Button 
-                      variant="icon" 
-                      size="sm" 
-                      onClick={() => setEditingFine(null)}
-                      disabled={isSubmitting}
-                      className="h-8 w-8 p-0"
-                    >
-                      <X className="size-4" />
-                    </Button>
-                  </div>
+                  <CardTitle className="text-sm font-semibold">Edit Fine Type</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <FineTypeForm
@@ -225,7 +199,7 @@ export function FineTypeDialog({
             {/* Fine Types Grid */}
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-[#1B5E20]">All Fine Types</h3>
-              
+
               {fineTypes.length === 0 ? (
                 <Card>
                   <CardContent className="flex flex-col items-center justify-center py-12">
@@ -249,8 +223,8 @@ export function FineTypeDialog({
                               <CardTitle className="text-base font-semibold ">
                                 {fine.name}
                               </CardTitle>
-                              <Badge 
-                                variant={fine.isActive ? "default" : "secondary"}    
+                              <Badge
+                                variant={fine.isActive ? "default" : "secondary"}
                               >
                                 {fine.isActive ? 'Active' : 'Inactive'}
                               </Badge>
@@ -273,7 +247,7 @@ export function FineTypeDialog({
                           </Button>
                         </div>
                       </CardHeader>
-                      
+
                       <CardContent className={cn(
                         "pb-3 transition-all",
                         !expandedCards.has(fine.id!) && "hidden"

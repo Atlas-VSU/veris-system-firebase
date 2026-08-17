@@ -24,6 +24,7 @@ interface EventsListProps {
   events: Event[];
   onEventsUpdate: () => void;
   viewMode: ViewMode;
+  onRequestCreateFineType?: () => void;
 }
 
 type PendingAction = {
@@ -31,7 +32,7 @@ type PendingAction = {
   event: Event;
 };
 
-export function EventsList({ events, onEventsUpdate, viewMode }: EventsListProps) {
+export function EventsList({ events, onEventsUpdate, viewMode, onRequestCreateFineType }: EventsListProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const { fineTypes, fetchFineTypes } = useEventFineTypes();
@@ -254,6 +255,10 @@ export function EventsList({ events, onEventsUpdate, viewMode }: EventsListProps
           onOpenChange={setIsEditDialogOpen}
           selectedEvent={selectedEvent}
           onEventEdited={handleEventEdited}
+          onRequestCreateFineType={() => {
+            setIsEditDialogOpen(false);
+            onRequestCreateFineType?.();
+          }}
         />
       )}
       {selectedEvent && (

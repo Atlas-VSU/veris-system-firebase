@@ -75,7 +75,7 @@ export function MemberCard({
           {/* Tappable header row */}
           <div className="w-full p-3 flex items-center gap-3 text-left active:bg-gray-50 transition-colors">
             <Avatar className="h-10 w-10 border border-gray-200 shrink-0">
-              <AvatarFallback className="bg-linear-to-r from-[#b8d390] via-[#51a555] to-[#225825] text-white font-semibold text-xs">
+              <AvatarFallback className="bg-gradient-to-br from-secondary to-primary text-primary-foreground font-semibold text-xs">
                 {getInitials(
                   memberData.member.firstName,
                   memberData.member.lastName,
@@ -168,7 +168,7 @@ export function MemberCard({
           <div className="p-5 space-y-4">
             <div className="flex items-start gap-4">
               <Avatar className="h-12 w-12 border border-gray-200">
-                <AvatarFallback className="bg-linear-to-r from-[#b8d390] via-[#51a555] to-[#225825] text-white font-semibold text-sm">
+                <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-primary-foreground font-semibold text-sm">
                   {getInitials(
                     memberData.member.firstName,
                     memberData.member.lastName,
@@ -188,7 +188,7 @@ export function MemberCard({
                       {getProgramName(memberData.member.programId)}
                     </Badge>
                     {memberData.member.yearLevel !== undefined &&
-                    memberData.member.yearLevel !== 0 ? (
+                      memberData.member.yearLevel !== 0 ? (
                       <Badge
                         variant="outline"
                         className="text-xs font-medium border-gray-300 text-gray-600 tracking-wide"

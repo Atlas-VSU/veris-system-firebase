@@ -60,8 +60,8 @@ export async function CompactMemberList({
           <div className="flex items-center justify-between gap-4">
             {/* Member Info */}
             <div className="flex items-center gap-4 flex-1 min-w-0">
-              <Avatar className="h-12 w-12 border-2 border-blue-200 shadow-sm">
-                <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 font-bold">
+              <Avatar className="h-12 w-12 border-2 border-primary/20 shadow-sm">
+                <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-primary-foreground font-bold">
                   {getInitials(
                     memberData.member.firstName,
                     memberData.member.lastName,

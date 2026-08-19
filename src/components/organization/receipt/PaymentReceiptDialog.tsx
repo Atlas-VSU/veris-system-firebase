@@ -75,7 +75,7 @@ export default function PaymentReceiptDialog({ open, onOpenChange, data }: Props
             body { font-family: sans-serif; display: flex; justify-content: center; padding: 32px; background: white; }
             .receipt { border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; width: 340px; font-size: 14px; color: #000; }
             .header { text-align: center; margin-bottom: 16px; }
-            .header img { width: 40px; height: 40px; margin: 0 auto 8px; display: block; }
+            .header img { width: 44px; height: 44px; margin: 0 auto 8px; display: block; border-radius: 50%; border: 1px solid #d1d5db; object-fit: cover; }
             .org-name { font-weight: 700; font-size: 16px; }
             .university { font-size: 11px; margin-top: 2px; }
             .subtitle { font-size: 11px; color: #6b7280; margin-top: 2px; }
@@ -114,7 +114,7 @@ export default function PaymentReceiptDialog({ open, onOpenChange, data }: Props
         <body>
           <div class="receipt">
             <div class="header">
-              <img src="${orgData?.orgLogoUrl || `${baseUrl}/images/ussc-logo-1.webp`}" alt="Org Logo" style="object-fit: contain; object-position: center;" />
+              <img src="${orgData?.orgLogoUrl || `${baseUrl}/images/ussc-logo-1.webp`}" alt="Org Logo" style="object-fit: cover; object-position: center; border-radius: 50%; border: 1px solid #d1d5db;" />
               <p class="org-name">${orgData?.name || 'University Supreme Student Council'}</p>
               <p class="university">Visayas State University - Baybay Main Campus</p>
               <p class="subtitle">Official Payment Receipt</p>
@@ -179,11 +179,11 @@ export default function PaymentReceiptDialog({ open, onOpenChange, data }: Props
         <div className="border rounded-lg p-6 bg-white text-black text-sm max-w-sm mx-auto">
           {/* Header */}
           <div className="text-center mb-4">
-            <div className="w-10 h-10 mx-auto mb-2 relative">
+            <div className="w-11 h-11 mx-auto mb-2 relative rounded-full overflow-hidden border border-gray-300">
               <img
-                src={orgData?.orgLogoUrl}
+                src={orgData?.orgLogoUrl || '/images/ussc-logo-1.webp'}
                 alt="Org Logo"
-                className="object-contain"
+                className="w-full h-full object-cover rounded-full"
               />
             </div>
             <p className="font-bold text-lg leading-tight mb-1">{orgData?.name || 'University Supreme Student Council'}</p>

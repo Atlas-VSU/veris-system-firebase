@@ -211,8 +211,9 @@ export function usePaymentsPage() {
 
   // ── Handlers: unpaid ──────────────────────────────────────────────────────
   const openUnpaidDetail = useCallback(async (record: ClearanceStatus) => {
-    const user = await getUserById(record.userId!);
-    const program = await getProgramById(user?.programId ?? "");
+    const userId = record.userId || "";
+    const user = userId ? await getUserById(userId) : null;
+    const program = user?.programId ? await getProgramById(user.programId) : null;
     setStudent(user as Member);
     setStudentProgram(program ?? null);
     setSelectedUnpaid(record)

@@ -42,7 +42,6 @@ import { useFines } from "@/features/organization/fines/hooks/useFines";
 import { useFineTypes } from "@/features/organization/fines/hooks/useFineTypes";
 import { getVariantFineType } from "@/features/organization/fines/utils/getVariantFineType";
 import { PageHeader } from "@/components/organization/general/PageHeader";
-import { set } from "zod";
 
 export function FinesPage() {
   const ITEMS_PER_PAGE = 9;

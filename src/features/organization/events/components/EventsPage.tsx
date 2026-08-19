@@ -23,6 +23,7 @@ import { FineTypeDialog } from "../../fines/components/FineTypeDialog";
 import { FineType } from "../../fines/types";
 import { useFineTypes } from "../../fines/hooks/useFineTypes";
 import { useSubscriptionTier } from "../hooks/useSubscriptionTier";
+import { toast } from "sonner";
 
 export default function EventsPage() {
   const [currentTab, setCurrentTab] = useState<EventStatus>("completed");
@@ -205,6 +206,13 @@ export default function EventsPage() {
               events={events}
               onEventsUpdate={refresh}
               viewMode={viewMode}
+              onRequestCreateFineType={() => {
+                setSelectedFineType(null);
+                setIsFormOpen(true);
+                toast.info("Opening Fine Type Creation tab", {
+                  description: "Create a fine type first so you can assign it to your events."
+                });
+              }}
             />
           )}
         </TabsContent>
@@ -222,6 +230,14 @@ export default function EventsPage() {
         open={addOpen}
         onOpenChange={setAddOpen}
         fineTypes={fineTypes}
+        onRequestCreateFineType={() => {
+          setAddOpen(false);
+          setSelectedFineType(null);
+          setIsFormOpen(true);
+          toast.info("Opening Fine Type Creation tab", {
+            description: "Create a fine type first so you can assign it to your events."
+          });
+        }}
         onEventAdded={() => {
           refresh();
           setAddOpen(false);

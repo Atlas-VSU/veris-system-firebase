@@ -152,17 +152,17 @@ export function MembersPage() {
           toast.error("Student ID already exists. Please use a different one.");
           return;
         }
- 
+
         const userId = await addUser(data);
         const currentUser = (await getCurrentUserData()) as unknown as Member;
- 
+
         if (data.role === "user" && userId) {
           await Promise.all([
             createFinePerStudent(userId, data),
             addStudentWithClearance(userId, data, currentUser.orgId!),
           ]);
           const orgContext = { uid: currentUser.orgId!, accessLevel: currentUser.accessLevel! };
- 
+
           await Promise.all([
             assignExistingFeesToStudent(userId, data, orgContext, currentUser),
             assignExistingFinesToStudent(userId, data, orgContext, currentUser),
@@ -217,7 +217,7 @@ export function MembersPage() {
       <PageHeader
         variant="admin"
         title="Members"
-        context={`${term.semester} Semester · A.Y. ${term.AY}`}
+        context={`${term?.semester || ""} Semester · A.Y. ${term?.AY || ""}`}
         description={`${totalMembers} total member${totalMembers !== 1 ? "s" : ""} in your organization`}
         action={
           <div className="hidden lg:flex items-center gap-2">
@@ -263,7 +263,7 @@ export function MembersPage() {
           setValue("")
         }}
 
-        
+
       >
         <SelectTrigger className="lg:hidden w-full">
           <SelectValue placeholder="Actions" />
@@ -297,10 +297,18 @@ export function MembersPage() {
 
       {/* Tabs — All members vs. self-registered students awaiting verification */}
       <Tabs defaultValue="all" className="w-full gap-6">
-        <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="all">All Members</TabsTrigger>
-          <TabsTrigger value="verify" className="gap-2">
-            Self-Registered
+        <TabsList className="grid w-full grid-cols-2 p-1 h-auto min-h-[44px] items-center justify-center">
+          <TabsTrigger
+            value="all"
+            className="w-full py-2.5 text-sm font-semibold flex items-center justify-center text-center"
+          >
+            <span>All Members</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="verify"
+            className="w-full py-2.5 text-sm font-semibold flex items-center justify-center text-center gap-2"
+          >
+            <span>Self-Registered</span>
             {selfRegPendingCount > 0 && (
               <Badge
                 variant="secondary"

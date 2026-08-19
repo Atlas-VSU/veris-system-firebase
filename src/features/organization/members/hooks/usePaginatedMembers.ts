@@ -193,10 +193,10 @@ export function usePaginatedMembers() {
           setTotalMembers(result.total);
           totalMembersRef.current = result.total;
         }
-        setTerm(_term!);
+        if (_term) setTerm(_term);
         setMembers(transformedMembers);
         // Always cache with the real count (ref holds it even when needCount=false)
-        updateMembersCache(cacheKey, transformedMembers, totalMembersRef.current, _term!);
+        if (_term) updateMembersCache(cacheKey, transformedMembers, totalMembersRef.current, _term);
       } catch (error) {
         console.error("Failed to fetch members", error);
         toast.error("Failed to load member data. Please try again.");

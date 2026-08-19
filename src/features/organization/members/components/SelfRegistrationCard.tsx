@@ -52,7 +52,7 @@ export function SelfRegistrationCard({
         {/* Header */}
         <div className="flex items-start gap-3">
           <Avatar className="h-11 w-11 shrink-0 border border-gray-200">
-            <AvatarFallback className="bg-linear-to-r from-[#b8d390] via-[#51a555] to-[#225825] text-sm font-semibold text-white">
+            <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-sm font-semibold text-primary-foreground">
               {getInitials(registration.firstName, registration.lastName)}
             </AvatarFallback>
           </Avatar>

@@ -54,6 +54,9 @@ export function useDashboard() {
   const [error, setError] = useState<Error | null>(null);
 
   const fetchDashboardData = async () => {
+    // Guard: term hasn't loaded yet — the useEffect will re-run once `selected` is set
+    if (!selected) return;
+
     setIsLoading(true);
     setError(null);
 

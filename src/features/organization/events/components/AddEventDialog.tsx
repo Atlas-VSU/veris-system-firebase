@@ -26,7 +26,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { CalendarIcon } from "lucide-react";
+import { AlertCircle, CalendarIcon, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EventFormData, eventSchema } from "@/lib/validators";
@@ -44,6 +44,7 @@ interface AddEventDialogProps {
   fineTypes: FineType[];
   onOpenChange: (open: boolean) => void;
   onEventAdded: () => void;
+  onRequestCreateFineType?: () => void;
 }
 
 const NAME_MAX = 50;
@@ -54,6 +55,7 @@ export function AddEventDialog({
   fineTypes,
   onOpenChange,
   onEventAdded,
+  onRequestCreateFineType,
 }: AddEventDialogProps) {
   const { selected } = useTermPeriod();
   const form = useForm<EventFormData>({
@@ -273,25 +275,74 @@ export function AddEventDialog({
                 name="fineTypeId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type of Fines</FormLabel>
+                    <FormLabel>Type of Fine</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a type of fines" />
+                          <SelectValue placeholder={fineTypes.length === 0 ? "No fine types available" : "Select a type of fine"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {fineTypes.map((type: FineType) => (
-                          <SelectItem key={type.id} value={type.id!}>
-                            {type.name}
-                            {type.majorEventsOnly && (
-                              <span className="ml-2 text-xs text-amber-600 font-medium">(Major Events Only)</span>
+                        {fineTypes.length === 0 ? (
+                          <div className="p-4 text-center space-y-3 min-w-[240px]">
+                            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
+                              <AlertCircle className="h-4 w-4" />
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xs font-semibold text-gray-900">No Fine Types Available</p>
+                              <p className="text-[11px] text-gray-500">Create a fine type first to attach fines to events.</p>
+                            </div>
+                            {onRequestCreateFineType && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                className="w-full h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onRequestCreateFineType();
+                                }}
+                              >
+                                <Plus className="h-3.5 w-3.5 mr-1" />
+                                Create Fine Type Now
+                              </Button>
                             )}
-                          </SelectItem>
-                        ))}
+                          </div>
+                        ) : (
+                          fineTypes.map((type: FineType) => (
+                            <SelectItem key={type.id} value={type.id!}>
+                              {type.name}
+                              {type.majorEventsOnly && (
+                                <span className="ml-2 text-xs text-amber-600 font-medium">(Major Events Only)</span>
+                              )}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
+
+                    {/* Contextual Banner when no fine types exist */}
+                    {fineTypes.length === 0 && (
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 mt-1.5 rounded-lg border border-amber-200 bg-amber-50/80 text-amber-900 shadow-xs">
+                        <div className="flex items-center gap-2 text-xs">
+                          <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                          <span>No fine types exist yet. Create a fine type to assign to this event.</span>
+                        </div>
+                        {onRequestCreateFineType && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs border-amber-300 bg-white hover:bg-amber-100 text-amber-900 shrink-0 font-medium self-end sm:self-auto"
+                            onClick={onRequestCreateFineType}
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1" />
+                            Create Fine Type
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
                     {/* Inline warning when majorEventsOnly fine type is selected but event isn't marked major */}
                     {selectedFineTypeObj?.majorEventsOnly && !isMajorEvent && (
                       <p className="text-xs text-amber-600 mt-1">

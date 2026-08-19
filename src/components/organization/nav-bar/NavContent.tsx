@@ -118,14 +118,14 @@ export function NavContent({
             collapsed && "justify-center px-0",
           )}
         >
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 p-1">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 overflow-hidden border border-primary/20">
             {organization?.orgLogoUrl ? (
               <img
                 src={organization.orgLogoUrl}
                 alt={organization?.shortName?.toUpperCase() || "Logo"}
-                width={32}
-                height={32}
-                className="h-7 w-7 object-contain"
+                width={36}
+                height={36}
+                className="w-full h-full object-cover"
               />
             ) : (
               <svg
@@ -135,7 +135,7 @@ export function NavContent({
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="h-7 w-7 text-primary"
+                className="h-5 w-5 text-primary"
               >
                 <path d="M4 4l8 16 8-16M8 4l4 8 4-8" />
               </svg>

@@ -149,7 +149,13 @@ export const getCurrentUserData = async () => {
       console.error("Authenticated user's document not found in Firestore.");
       return null;
     }
-    const data = { uid: userDocSnap.data().id, ...userDocSnap.data() } as any;
+    const docData = userDocSnap.data();
+    const userId = docData?.id || docData?.uid || userDocSnap.id || currentUser.uid;
+    const data = {
+      ...docData,
+      uid: userId,
+      id: userId,
+    } as any;
     return data;
     
 
@@ -516,6 +522,9 @@ export const searchUserByName = async (
 };
 
 export const getUserById = async (userId: string): Promise<Member | null> => {
+  if (!userId || typeof userId !== "string" || !userId.trim()) {
+    return null;
+  }
   try {
     const querySnapshot = await getDocs(
       query(

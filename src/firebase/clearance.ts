@@ -41,16 +41,17 @@ export const getClearanceStats = async (
   selectedTerm?: { AY: string; semester: string } | null
 ) => {
   const term = selectedTerm || await getActiveTerm();
+  if (!term) return 0;
   return cacheService.getOrFetch(
-    `clearance:stats:${orgId}:${statusFilter}:${term?.AY}-${term?.semester}`,
+    `clearance:stats:${orgId}:${statusFilter}:${term.AY}-${term.semester}`,
     async () => {
       const snapshot = await getCountFromServer(query(
         collection(db, 'clearanceStatus'),
         where('orgId', '==', orgId),
         where('isArchived', '==', false),
         where('status', '==', statusFilter),
-        where("academicYear", "==", term!.AY),
-        where("semester", "==", term!.semester)
+        where("academicYear", "==", term.AY),
+        where("semester", "==", term.semester)
       ));
       return snapshot.data().count;
     },
@@ -73,11 +74,12 @@ export const fetchClearanceDocumentsPaginated = async (
 ) => {
   const clearanceRef = collection(db, "clearanceStatus");
   const term = selectedTerm || await getActiveTerm();
+  if (!term) return { docs: [], lastVisible: null, allSnapshots: [], hasMore: false, count: 0 };
   let constraints: QueryConstraint[] = [
     where("orgId", "==", orgId),
     where("isArchived", "==", false),
-    where("academicYear", "==", term!.AY),
-    where("semester", "==", term!.semester)
+    where("academicYear", "==", term.AY),
+    where("semester", "==", term.semester)
   ];
 
   if (statusFilter !== "all") {
@@ -161,15 +163,16 @@ export const getClearanceCount = async (
   selectedTerm?: { AY: string; semester: string } | null
 ) => {
   const term = selectedTerm || await getActiveTerm();
+  if (!term) return 0;
   return cacheService.getOrFetch(
-    `clearance:count:${orgId}:${statusFilter}:${searchTerm}:${term?.AY}-${term?.semester}`,
+    `clearance:count:${orgId}:${statusFilter}:${searchTerm}:${term.AY}-${term.semester}`,
     async () => {
       const clearanceRef = collection(db, "clearanceStatus");
       const constraints: any[] = [
         where("orgId", "==", orgId),
         where("isArchived", "==", false),
-        where("academicYear", "==", term!.AY),
-        where("semester", "==", term!.semester)
+        where("academicYear", "==", term.AY),
+        where("semester", "==", term.semester)
       ];
 
       if (statusFilter !== "all") {

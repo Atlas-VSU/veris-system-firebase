@@ -62,9 +62,10 @@ export const getPrograms = async () => {
 export const getProgramById = async (
   programId: string
 ): Promise<Program | null> => {
+  if (!programId || typeof programId !== "string" || !programId.trim()) {
+    return null;
+  }
   try {
-    // **FIX:** This function no longer calls getPrograms().
-    // It fetches the document directly from Firestore, which is efficient and avoids the infinite loop.
     const docRef = doc(db, "programs", programId);
     const docSnap = await getDoc(docRef);
 

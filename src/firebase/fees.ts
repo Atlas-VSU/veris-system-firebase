@@ -129,14 +129,17 @@ export const createFee = async (
 
     await setDoc(feeDocRef, {
         ...feeData,
+        description: feeData.description ?? "",
+        dueDate: feeData.dueDate ?? null,
+        createdBy: currentUserData?.uid || currentUserData?.id || "",
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-        orgId: currentUserData.orgId,
+        orgId: currentUserData?.orgId || "",
         totalStudents,
         id: feeDocRef.id,
         isArchived: false,
-        academicYear: selected.AY,
-        semester: selected.semester,
+        academicYear: selected?.AY || "",
+        semester: selected?.semester || "",
     });
 
     return feeDocRef.id;
@@ -187,26 +190,28 @@ export const generateFeesForAllStudentsInAnOrg = async (
                     const studentId = student.id || "";
                     feeDocRefs.push({ ref: feeDocRef, studentId });
 
+                    const creatorId = currentUserData?.uid || currentUserData?.id || "";
+
                     // Write 1: Fee document
                     batch.set(feeDocRef, {
-                        orgId: currentUserData.orgId,
+                        orgId: currentUserData?.orgId || "",
                         userId: studentId,
-                        userName: `${student.member.firstName} ${student.member.lastName}`,
-                        studentId: student.member.studentId,
+                        userName: `${student.member?.firstName || ""} ${student.member?.lastName || ""}`.trim() || "N/A",
+                        studentId: student.member?.studentId || "N/A",
                         feeItemId: feeItem,
-                        feeType: feeData.feeType,
-                        title: feeData.title,
-                        amount: feeData.amount,
+                        feeType: feeData.feeType || "",
+                        title: feeData.title || "",
+                        amount: feeData.amount || 0,
                         paidAmount: 0,
-                        balance: feeData.amount,
+                        balance: feeData.amount || 0,
                         status: "unpaid",
                         academicYear: term?.AY || "",
                         semester: term?.semester || "",
-                        description: feeData.description,
+                        description: feeData.description ?? "",
                         eventId: eventId || null,
-                        dueDate: feeData.dueDate,
-                        isRequiredForClearance: feeData.isRequiredForClearance,
-                        createdBy: currentUserData.uid,
+                        dueDate: feeData.dueDate ?? null,
+                        isRequiredForClearance: feeData.isRequiredForClearance ?? false,
+                        createdBy: creatorId,
                         createdAt: now,
                         updatedAt: now,
                         isArchived: false,

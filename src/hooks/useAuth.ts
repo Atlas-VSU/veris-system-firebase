@@ -5,6 +5,7 @@ import { auth, db } from "@/firebase/firebase.config";
 
 export type UserData = {
   uid: string;
+  id?: string;
   name: string;
   email: string;
   avatar: string;
@@ -32,17 +33,21 @@ export function useAuth() {
           if (userSnapshot.exists()) {
             const firestoreData = userSnapshot.data();
             // Combine auth and Firestore data
+            const uid = firestoreData.id || firestoreData.uid || userSnapshot.id || authUser.uid;
+            const firstName = firestoreData.firstName || (firestoreData.name ? firestoreData.name.split(" ")[0] : "") || "";
+            const lastName = firestoreData.lastName || (firestoreData.name ? firestoreData.name.split(" ").slice(1).join(" ") : "") || "";
             setUser({
-              uid: firestoreData.id,
-              name: firestoreData.name,
+              uid,
+              id: uid,
+              name: firestoreData.name || `${firstName} ${lastName}`.trim() || authUser.displayName || "User",
               email: authUser.email || firestoreData.email || "",
               avatar: authUser.photoURL || "",
-              firstName: firestoreData.firstName,
-              lastName: firestoreData.lastName,
+              firstName,
+              lastName,
               role: firestoreData.role || "user",
-              facultyId: firestoreData.facultyId,
-              accessLevel: firestoreData.accessLevel,
-              orgId: firestoreData.orgId
+              facultyId: firestoreData.facultyId || "",
+              accessLevel: firestoreData.accessLevel ?? 0,
+              orgId: firestoreData.orgId || ""
             });
           } else {
             // Use auth data if Firestore document doesn't exist

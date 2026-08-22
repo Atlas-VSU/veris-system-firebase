@@ -929,6 +929,9 @@ export const recordBulkManualPaymentAndUpdateClearance = async (
         const studentData = studentDataDoc.data();
         const currentUser = await getCurrentUserData() as unknown as Member; // Assuming this is available in your scope
 
+        const finalAdminId = adminId || (currentUser as any)?.id || (currentUser as any)?.uid || "";
+        const finalAdminName = adminName || `${currentUser?.firstName || ""} ${currentUser?.lastName || ""}`.trim() || "Admin";
+
         // Create references for the single unified logs
         const paymentProofRef = doc(collection(db, "proofOfPayments"));
         
@@ -990,8 +993,8 @@ export const recordBulkManualPaymentAndUpdateClearance = async (
                     data: itemDoc.data(),
                     paymentAmount: item.amount,
                     refId: item.refId,
-                    academicYear: item.paymentType === PaymentType.FEES ? itemDoc.data()?.academicYear : term!.AY,
-                    semester: item.paymentType === PaymentType.FEES ? itemDoc.data()?.semester : term!.semester,
+                    academicYear: item.paymentType === PaymentType.FEES ? itemDoc.data()?.academicYear || term?.AY || "" : term?.AY || "",
+                    semester: item.paymentType === PaymentType.FEES ? itemDoc.data()?.semester || term?.semester || "" : term?.semester || "",
                 });
                 if (bulkPaymentHistoryRef) {
                     // Stage the log data for the WRITE phase
@@ -1004,8 +1007,8 @@ export const recordBulkManualPaymentAndUpdateClearance = async (
                         gcashReference: method === "gcash" && ref ? ref : null,
                         status: PaymentStatus.VERIFIED,
                         paidAt: Timestamp.now(),
-                        verifiedBy: adminId,
-                        verifiedByName: adminName,
+                        verifiedBy: finalAdminId,
+                        verifiedByName: finalAdminName,
                         verifiedAt: Timestamp.now(),
                         rejectionReason: null,
                         notes: `Manual payment recorded from clearance page. Items: ${items.map(i => i.refId).join(', ')}`,
@@ -1016,8 +1019,8 @@ export const recordBulkManualPaymentAndUpdateClearance = async (
                             amount: i.paymentAmount,
                             paymentType: i.data.paymentType || (item.paymentType), // Fallback
                             parentFineId: i.data.parentFineId || "",
-                            academicYear: i.academicYear,
-                            semester: i.semester
+                            academicYear: i.academicYear || term?.AY || "",
+                            semester: i.semester || term?.semester || ""
                         })) },
                         itemKeys: itemDocsToUpdate.map(i => i.data.feeItemId ?? i.refId), // fallback to refId
                         createdAt: Timestamp.now(),
@@ -1054,8 +1057,8 @@ export const recordBulkManualPaymentAndUpdateClearance = async (
                 imageUrl: "",
                 status: PaymentStatus.VERIFIED,
                 submittedAt: Timestamp.now(),
-                verifiedBy: adminId,
-                verifiedByName: adminName,
+                verifiedBy: finalAdminId,
+                verifiedByName: finalAdminName,
                 verifiedAt: Timestamp.now(),
                 rejectionReason: "",
                 notes: "Manual payment recorded from clearance page",

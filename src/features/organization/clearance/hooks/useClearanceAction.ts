@@ -102,13 +102,15 @@ export function useClearanceActions(
 
         // Manual Log handles its own updates
         const studentId = clearance.userId || ""
+        const adminId = currentUser?.uid || currentUser?.id || ""
+        const adminName = `${currentUser?.firstName || ""} ${currentUser?.lastName || ""}`.trim() || currentUser?.name || "Admin"
         await logManualPaymentClearanceUpdate(
           clearanceId,
           studentId, 
           options.addPaymentLog.items,
           options.addPaymentLog.method,
-          currentUser.uid,
-          `${currentUser.firstName} ${currentUser.lastName}`,
+          adminId,
+          adminName,
           options.addPaymentLog.overallPaymentType,  
           receiptCode,
           term! 

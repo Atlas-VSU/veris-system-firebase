@@ -22,7 +22,7 @@ interface UseFeeGenerationProps {
 }
 
 export function useFeeGeneration({ studentsCount, onSuccess, onOpenChange }: UseFeeGenerationProps) {
-  const { active } = useTermPeriod()
+  const { active, selected } = useTermPeriod()
   const [isGenerating, setIsGenerating] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<FeeGenerationFormData | null>(null);
@@ -46,12 +46,20 @@ export function useFeeGeneration({ studentsCount, onSuccess, onOpenChange }: Use
   });
 
   const onFormSubmit = (data: FeeGenerationFormData) => {
+    if (!selected?.isActive) {
+      toast.error("Cannot generate fees under an inactive academic term.");
+      return;
+    }
     setPendingFormData(data);
     setShowConfirmDialog(true);
   };
 
   const handleConfirmedGeneration = async () => {
     if (!pendingFormData) return;
+    if (!selected?.isActive) {
+      toast.error("Cannot generate fees under an inactive academic term.");
+      return;
+    }
 
     setShowConfirmDialog(false);
     setIsGenerating(true);

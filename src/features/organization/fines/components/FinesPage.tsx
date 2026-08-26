@@ -29,6 +29,8 @@ import {
   FileText,
   Eye,
   AlertCircle,
+  ShieldAlert,
+  CheckCircle2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,7 +79,7 @@ export function FinesPage() {
     setTotalCount,
     setFilterStatus,
     refreshFineItems,
-    AY,sem,
+    AY, sem,
   } = useFines({ itemsPerPage: ITEMS_PER_PAGE });
 
   const {
@@ -139,6 +141,12 @@ export function FinesPage() {
     setTotalCount((prev) => prev - 1);
   };
 
+  useEffect(() => {
+    if (!doneSeeding && !isLoading) {
+      setIsBulkGenerateOpen(true);
+    }
+  }, [doneSeeding, isLoading]);
+
   return (
     <div className="flex flex-col gap-6 pb-5 lg:pb-0">
       <PageHeader
@@ -149,12 +157,12 @@ export function FinesPage() {
         action={
           <div className="hidden lg:flex">
             {/* PLEASE DON'T REMOVE THIS YET */}
-            {/* NOTE: THIS IS THE BUTTON TO TRIGGER BULK GENERATION OF FINES CONTAINER FOR ALL STUDENTS OR MEMBERS THAT ARE ALREADY ADDED IN THE DATABASE */}
-            {/* USING THIS MEANS A BRUTEFORCE SINCE A FINES CONTAINER SHOULD BE MADE TOGETHER WITH THE CLEARANCE AS SOON AS A STUDENT WAS ADDED TO THE SYSTEM */}
+            {/* NOTE: THIS IS THE BUTTON TO TRIGGER BULK GENERATION OF STUDENT FINE RECORDS FOR ALL STUDENTS OR MEMBERS THAT ARE ALREADY ADDED IN THE DATABASE */}
+            {/* USING THIS MEANS A BRUTEFORCE SINCE STUDENT FINE RECORDS SHOULD BE MADE TOGETHER WITH THE CLEARANCE AS SOON AS A STUDENT WAS ADDED TO THE SYSTEM */}
             {/* <Button size="sm" onClick={() => setIsBulkGenerateOpen(true)}>
               Seed Fines to All Users
             </Button> */}
-            
+
             <Button size="sm" onClick={handleAddFineType} className="gap-1.5">
               <Eye className="h-4 w-4" />
               View Fine Types
@@ -221,25 +229,6 @@ export function FinesPage() {
         disabled={isLoading}
       />
 
-      {/* Seed Banner — shown once when no records exist for this term */}
-      {!doneSeeding && !isLoading && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-700 dark:text-amber-400">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-          <div className="flex flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold">No fines container found for {sem} · A.Y. {AY}</p>
-              <p className="text-xs opacity-80">Generate generate fines container for all students in this term to get started.</p>
-            </div>
-            <Button
-              size="sm"
-              className="mt-2 shrink-0 sm:mt-0 bg-amber-600 hover:bg-amber-700 text-white"
-              onClick={() => setIsBulkGenerateOpen(true)}
-            >
-                <><Users className="mr-2 h-4 w-4" /> Setup Fines</>
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Main Card - Following Payments pattern */}
       <Card className="border-border bg-card">
@@ -264,6 +253,25 @@ export function FinesPage() {
             ) : (
               <CardGridSkeleton count={9} />
             )
+          ) : !doneSeeding ? (
+            <div className="flex min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed p-8 text-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <ShieldAlert className="h-10 w-10 animate-pulse" />
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-foreground">Term Fines Roster Not Initialized</h3>
+              <p className="mt-2 text-sm text-muted-foreground max-w-md leading-relaxed">
+                Fine tracking records have not been set up for this term yet. 
+                Initializing the student fine tracking roster is a <strong>required step</strong> before you can track balances, view students, or manage student clearances.
+              </p>
+              <Button
+                variant="outline"
+                className="mt-4 border-amber-500/30 hover:bg-amber-500/10 text-amber-700 dark:text-amber-400 gap-1.5"
+                onClick={() => setIsBulkGenerateOpen(true)}
+              >
+                <Users className="h-4 w-4" />
+                Initialize Records
+              </Button>
+            </div>
           ) : paginatedFines.length === 0 ? (
             <div className="flex min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed p-8 text-center">
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
@@ -378,7 +386,7 @@ export function FinesPage() {
                           </div>
                           <ChevronRight className="size-4 text-muted-foreground shrink-0" />
                         </div>
-                        
+
                         <div className="overflow-hidden">
                           <div className="px-3 pb-3 space-y-2 border-t border-border pt-2">
                             <div className="flex items-center justify-between text-xs">
@@ -523,6 +531,7 @@ export function FinesPage() {
       <BulkGenerationDialog
         open={isBulkGenerateOpen}
         onOpenChange={setIsBulkGenerateOpen}
+        onSuccess={hardRefresh}
       />
       <FineBreakdownDialog
         open={isBreakdownOpen}

@@ -4,6 +4,8 @@ import { UserPlus, Upload, Loader2, Zap } from "lucide-react";
 import Link from "next/link";
 import { useTermPeriod } from "../../term/hooks/useTermPeriod";
 
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 interface AttendeesHeaderProps {
   event: Event;
   onExport: () => void;
@@ -57,14 +59,27 @@ export function AttendeesHeader({
           )}
 
           {event.status === "completed" && !event.finesGenerated && (
-            <Button
-              variant="outline"
-              onClick={onGenerateFines}
-              disabled={isGenerating || !selected?.isActive}
-            >
-              <Zap className="size-4 mr-1 text-primary" />
-              Generate Fines
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-block">
+                    <Button
+                      variant="outline"
+                      onClick={onGenerateFines}
+                      disabled={isGenerating || !selected?.isActive}
+                    >
+                      <Zap className="size-4 mr-1 text-primary" />
+                      Generate Fines
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!selected?.isActive && (
+                  <TooltipContent>
+                    <p>Fine generation is disabled for inactive academic terms</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           )}
 
           <Button

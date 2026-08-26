@@ -1,11 +1,13 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Zap, ChevronRight, CircleDollarSign, Loader2 } from "lucide-react"
+import { Zap, ChevronRight, CircleDollarSign, Loader2, AlertTriangle } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
@@ -83,6 +85,17 @@ export default function FeeListPage() {
 
   return (
     <div className="space-y-6">
+      {/* Inactive Term Warning Banner */}
+      {!selected?.isActive && (
+        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertTitle className="font-semibold text-amber-800 dark:text-amber-300">Inactive Academic Term Selected</AlertTitle>
+          <AlertDescription className="text-amber-700 dark:text-amber-400 text-xs sm:text-sm">
+            Fee generation is disabled because the currently selected term ({selected?.AY ? `AY ${selected.AY}` : "Selected Term"} - {selected?.semester} Sem) is inactive. Please switch to an active academic term to generate new fees.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Filters Section */}
       <FeesFilters
         searchTerm={searchTerm}
@@ -111,13 +124,26 @@ export default function FeeListPage() {
               </CardTitle>
               <CardDescription>{filtered.length} fee{filtered.length !== 1 ? "s" : ""} found</CardDescription>
             </div>
-            <Button 
-              variant="default"
-              onClick={() => setGenerateOpen(true)}
-              disabled={!selected?.isActive}
-            >
-              <Zap className="size-4" /> Generate Fee
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-block">
+                    <Button 
+                      variant="default"
+                      onClick={() => setGenerateOpen(true)}
+                      disabled={!selected?.isActive}
+                    >
+                      <Zap className="size-4" /> Generate Fee
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!selected?.isActive && (
+                  <TooltipContent>
+                    <p>Fee generation is disabled for inactive academic terms</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </CardHeader>
         

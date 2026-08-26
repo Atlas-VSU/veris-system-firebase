@@ -100,6 +100,10 @@ export const createBulkFines = async (
       report("error", "No authenticated user found.");
       return result;
     }
+    if (!term || !term.isActive) {
+      report("error", "Fine generation is disabled for inactive academic terms.");
+      return result;
+    }
 
     const doneSeeding = await getDocs(query(collection(db, "fines",),
       where("orgId", "==", currentUser.orgId),
@@ -107,7 +111,7 @@ export const createBulkFines = async (
       where("semester", "==", term!.semester),
       limit(1)));
     if (doneSeeding.size > 0) {
-      report("done", "Fines Container already created for this term. No action taken.");
+      report("done", "Student fine records already initialized for this term. No action taken.");
       result.success = true;
       return result;
      }
@@ -349,6 +353,11 @@ export const generateFinesOnEvent = async (
     message: string,
     batch?: { batchNum: number; totalBatches: number }
   ) => onProgress?.(makeSnapshot(phase, counts, message, batch));
+
+  if (!term || !term.isActive) {
+    report("error", "Fine generation is disabled for inactive academic terms.");
+    return;
+  }
 
   // ── PREFLIGHT ─────────────────────────────────────────────────────────────
   report("preflight", "Fetching fine type and querying absent users…");

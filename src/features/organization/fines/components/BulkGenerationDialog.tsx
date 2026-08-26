@@ -1,4 +1,4 @@
-import { CheckCircle, Clock, Upload, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Upload, XCircle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { createBulkFines } from "@/firebase/fines/create/fines";
 import { useState } from "react";
@@ -7,22 +7,33 @@ import { BulkFinesProgress } from "../types";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useTermPeriod } from "../../term/hooks/useTermPeriod";
 
 interface BulkGenerationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export function BulkGenerationDialog({ open, onOpenChange }: BulkGenerationDialogProps) {
+export function BulkGenerationDialog({ open, onOpenChange, onSuccess }: BulkGenerationDialogProps) {
+  const { selected } = useTermPeriod();
   const [progress, setProgress] = useState<BulkFinesProgress | null>(null);
 
   const handleClose = () => {
     if (isRunning) return;
+    if (isDone && onSuccess) {
+      onSuccess();
+    }
     setProgress(null);       // reset so next open starts fresh
     onOpenChange(false);
   };
 
   const handleCreate = async () => {
+    if (!selected?.isActive) {
+      toast.error("Cannot generate fines for an inactive academic term.");
+      return;
+    }
     const result = await createBulkFines(
       (update) => setProgress(update)
     );
@@ -44,11 +55,21 @@ export function BulkGenerationDialog({ open, onOpenChange }: BulkGenerationDialo
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-5xl w-[90vw] overflow-y-auto max-h-[90vh] py-8">
         <DialogHeader>
-          <DialogTitle>Bulk Generate Fines</DialogTitle>
+          <DialogTitle>Initialize Student Fine Records</DialogTitle>
           <DialogDescription>
-            This one-time action will generate fine containers for all the students. 
+            This is a necessary step to initialize fine tracking records for all registered students for the current term. It enables you to view the student fine roster, manage clearances, and issue new fines.
           </DialogDescription>
         </DialogHeader>
+
+        {!selected?.isActive && !isRunning && !isDone && (
+          <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertTitle className="font-semibold text-amber-800 dark:text-amber-300">Inactive Academic Term</AlertTitle>
+            <AlertDescription className="text-amber-700 dark:text-amber-400 text-xs">
+              Fine generation is disabled because the selected term is inactive. Please switch to an active academic term.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {isRunning && progress && (
           <div className="space-y-6 py-4">
@@ -56,7 +77,7 @@ export function BulkGenerationDialog({ open, onOpenChange }: BulkGenerationDialo
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5" />
-                  Generating Fines
+                  Initializing Fine Records
                 </CardTitle>
                 <CardDescription>
                   Processing {progress.totalUsers.toLocaleString()} users in batches of 20.
@@ -171,10 +192,11 @@ export function BulkGenerationDialog({ open, onOpenChange }: BulkGenerationDialo
               variant="success" 
               onClick={handleCreate}
               isLoading={isRunning}
-              loadingText="Generating..."
+              disabled={!selected?.isActive}
+              loadingText="Initializing..."
             >
               <Upload className="h-4 w-4 mr-2" />
-              Generate Fines
+              Initialize Records
             </LoadingButton>
           </div>  
             )}

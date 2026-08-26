@@ -119,6 +119,9 @@ export const createFee = async (
     currentUserData: any,
     selected: Term
 ) => {
+    if (!selected || !selected.isActive) {
+        throw new Error("Fee creation is disabled for inactive academic terms.");
+    }
     const feeRef = collection(db, "feeItems");
     const feeDocRef = doc(feeRef);
 
@@ -153,6 +156,9 @@ export const generateFeesForAllStudentsInAnOrg = async (
     eventId?: string
 ): Promise<void> => {
     const term = await getActiveTerm();
+    if (!term || !term.isActive) {
+        throw new Error("Fee generation is disabled for inactive academic terms.");
+    }
     const students = await getAllMembersOfAnOrg(currentUserData) as any;
     const totalCount = students.length;
     if (totalCount === 0) throw new Error("No students provided");

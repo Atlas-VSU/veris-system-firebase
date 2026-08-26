@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
 import { useFeeGeneration } from "../hooks/useFeeGeneration";
@@ -100,6 +101,16 @@ export function FeeGenerationDialog({
                 : `Create a new fee entry that will be applied to all students under your org. This fee will be saved under the current term (${selected?.AY} - ${selected?.semester} Sem). Fill in the details below.`}
             </DialogDescription>
           </DialogHeader>
+
+          {!selected?.isActive && !isGenerating && (
+            <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <AlertTitle className="font-semibold text-amber-800 dark:text-amber-300">Inactive Term</AlertTitle>
+              <AlertDescription className="text-amber-700 dark:text-amber-400 text-xs">
+                Fee generation is disabled because the selected term is inactive. Please switch to an active academic term to generate fees.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="relative">
             {isGenerating ? (
@@ -302,7 +313,7 @@ export function FeeGenerationDialog({
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isGenerating}>
+                  <Button type="submit" disabled={isGenerating || !selected?.isActive}>
                     Generate Fees
                   </Button>
                 </DialogFooter>

@@ -28,10 +28,14 @@ import { useState } from "react";
 import { Event } from "@/features/organization/events/types";
 import { toast } from "sonner";
 import { BulkFinesIssuance } from "@/features/organization/fines/components/BulkFinesIssuance";
+import { useTermPeriod } from "@/features/organization/term/hooks/useTermPeriod";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 export default function EventAttendeesPage() {
   const params = useParams();
   const eventId = params.id as string;
+  const { selected } = useTermPeriod();
   const [isExporting, setIsExporting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -86,6 +90,10 @@ export default function EventAttendeesPage() {
   };
 
   const handleGenerateFines = async () => {
+    if (!selected?.isActive) {
+      toast.error("Fine generation is disabled for inactive academic terms.");
+      return;
+    }
     setIsGenerating(true);
     setBulkIssueFinesOpen(true);
   };
@@ -205,6 +213,16 @@ export default function EventAttendeesPage() {
             onClose={handleClose}            // explicit close only when user clicks Close button
             event={eventData}
           />
+        )}
+
+        {!selected?.isActive && eventData?.status === "completed" && !eventData?.finesGenerated && (
+          <Alert className="mb-6 border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertTitle className="font-semibold text-amber-800 dark:text-amber-300">Inactive Academic Term Selected</AlertTitle>
+            <AlertDescription className="text-amber-700 dark:text-amber-400 text-xs sm:text-sm">
+              Fine generation for this event is disabled because the currently selected term ({selected?.AY ? `AY ${selected.AY}` : "Selected Term"} - {selected?.semester} Sem) is inactive. Switch to an active academic term to generate fines.
+            </AlertDescription>
+          </Alert>
         )}
 
         <div className="mb-6">

@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle, Clock, Upload, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Upload, XCircle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { FineGenerationProgress } from "../types";
 import { generateFinesOnEvent } from "@/firebase/fines/create/fines";
 import { Event } from "../../events/types";
 import { toast } from "sonner";
 import { useSubscriptionTier } from "../../events/hooks/useSubscriptionTier";
+import { useTermPeriod } from "../../term/hooks/useTermPeriod";
 
 interface BulkFinesIssuanceProps {
   open: boolean;
@@ -24,6 +26,7 @@ export function BulkFinesIssuance({
   onClose,
   event
 }: BulkFinesIssuanceProps) {
+  const { selected } = useTermPeriod();
   const [progress, setProgress] = useState<FineGenerationProgress | null>(null);
 
   const isRunning = progress?.phase === "preflight"
@@ -42,6 +45,10 @@ export function BulkFinesIssuance({
   };
 
   const handleIssuance = async () => {
+    if (!selected?.isActive) {
+      toast.error("Cannot generate fines for an inactive academic term.");
+      return;
+    }
     try {
       await generateFinesOnEvent(
         event,
@@ -87,6 +94,16 @@ export function BulkFinesIssuance({
             </p>
           </div>
         </DialogHeader>
+
+        {!selected?.isActive && !isRunning && !isDone && (
+          <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertTitle className="font-semibold text-amber-800 dark:text-amber-300">Inactive Academic Term</AlertTitle>
+            <AlertDescription className="text-amber-700 dark:text-amber-400 text-xs">
+              Fine generation is disabled because the selected term is inactive. Please switch to an active academic term.
+            </AlertDescription>
+          </Alert>
+        )}
 
          {/* ── RUNNING ─────────────────────────────────────────────────── */}
         {isRunning && progress && (
@@ -309,7 +326,7 @@ export function BulkFinesIssuance({
             {!isDone &&(
             <div>
             {!isRunning && !isDone? (
-            <Button onClick={handleIssuance} disabled={subscriptionTier === "basic"}>
+            <Button onClick={handleIssuance} disabled={subscriptionTier === "basic" || !selected?.isActive}>
               <Upload className="h-4 w-4 mr-2" />
               Issue Fines
             </Button>

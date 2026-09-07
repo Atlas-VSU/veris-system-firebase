@@ -41,7 +41,8 @@ export function usePaginatedMembers() {
   const [programFilter, setProgramFilter] = useState("all");
   const [sortBy, setSortBy] = useState("name-asc");
   const [viewMode, setViewMode] = useState<"card" | "table">("card");
-  const [term, setTerm] = useState<Term>({AY:"", semester:"", isActive: true});
+  const { selected: _term } = useTermPeriod();
+  const term = _term || { AY: "", semester: "", isActive: true };
 
   // ─── Pagination (cursor-based, forward/backward only) ─────────────────────
   // cursorStack[0] = null (page 1 has no cursor)
@@ -64,7 +65,7 @@ export function usePaginatedMembers() {
     setCurrentPage(1);
   }, []);
 
-  const { selected: _term } = useTermPeriod();
+  // term setup moved up
 
   // ─── Static data loader ───────────────────────────────────────────────────
   const loadStaticData = useCallback(async (forceRefresh = false) => {
@@ -146,7 +147,6 @@ export function usePaginatedMembers() {
           setMembers(cached.members);
           setTotalMembers(cached.totalMembers);
           if (cached.totalMembers > 0) totalMembersRef.current = cached.totalMembers;
-          setTerm(cached.term);
           setDataSource("cache");
           setIsLoading(false);
           setIsRefreshing(false);
@@ -193,7 +193,7 @@ export function usePaginatedMembers() {
           setTotalMembers(result.total);
           totalMembersRef.current = result.total;
         }
-        if (_term) setTerm(_term);
+        
         setMembers(transformedMembers);
         // Always cache with the real count (ref holds it even when needCount=false)
         if (_term) updateMembersCache(cacheKey, transformedMembers, totalMembersRef.current, _term);
@@ -205,7 +205,7 @@ export function usePaginatedMembers() {
         setIsRefreshing(false);
       }
     },
-    [] // No state deps — params are passed explicitly to avoid stale closures
+    [_term] 
   );
 
   // ─── Navigation handlers ──────────────────────────────────────────────────
@@ -368,7 +368,14 @@ export function usePaginatedMembers() {
   }, [pageSize, programFilter, sortBy, committedSearch, fetchMembers, resetPagination]);
 
   // ─── Initial load ─────────────────────────────────────────────────────────
+  const hasInitializedTerm = useRef<string | null>(null);
+  
   useEffect(() => {
+    if (!_term) return;
+    const termKey = `${_term.AY}-${_term.semester}`;
+    if (hasInitializedTerm.current === termKey) return;
+    hasInitializedTerm.current = termKey;
+    
     const savedViewMode = localStorage.getItem("membersViewMode") as
       | "card"
       | "table"
@@ -388,11 +395,10 @@ export function usePaginatedMembers() {
         sortBy: "name-asc",
         committedSearch: "",
         forceRefresh: false,
-        needCount: true, // get total on first load only
+        needCount: true, 
       });
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally empty — runs once on mount
+  }, [_term, loadStaticData, fetchMembers]);
 
   // ─── Derived state ────────────────────────────────────────────────────────
   const hasNextPage = members.length === pageSize;

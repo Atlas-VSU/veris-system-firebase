@@ -9,6 +9,8 @@ import {
 } from "@/firebase";
 import { isValidStudentId } from "../utils";
 import { createFinePerStudent } from "@/firebase/fines/create/fines";
+import { onboardNewStudent } from "@/firebase/onboarding";
+import { getAllOrgs } from "@/firebase/organization";
 
 interface useAddStudentFormProps {
   suggestedId: string;
@@ -55,7 +57,7 @@ export function useAddStudentForm({
     const fetchProgramData = async () => {
       try {
         const data = (await getProgramByFacultyId()) as Program[];
-        setProgramData(data);
+        setProgramData(data.sort((a, b) => a.name.localeCompare(b.name)));
       } catch (error) {
         console.error("Failed to fetch program data:", error);
       }
@@ -123,7 +125,7 @@ export function useAddStudentForm({
         setFormErrors({ studentId: "Student ID already exists" });
         return;
       }
-      const currentUser = getCurrentUserData() as unknown as Member;
+      const currentUser = (await getCurrentUserData()) as unknown as Member;
       const facultyId = currentUser.facultyId;
 
       const newStudentData = {
@@ -133,7 +135,13 @@ export function useAddStudentForm({
       };
 
       const userId = await addUser(newStudentData);
-      await createFinePerStudent(userId!, newStudentData as Member);
+      
+      if (newStudentData.role === "user" && userId) {
+        await createFinePerStudent(userId, newStudentData as Member);
+        const allOrgs = await getAllOrgs();
+        await onboardNewStudent(userId, newStudentData, allOrgs, currentUser);
+      }
+      
       onStudentAdded(newStudentData);
       onOpenChange(false);
     } catch (error) {

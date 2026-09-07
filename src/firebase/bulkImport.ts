@@ -22,8 +22,9 @@ import {
 import { getFaculties } from "./faculties";
 import { getPrograms } from "./programs";
 import { parseCSVRow } from "@/features/organization/members/csv.utils";
-import { addStudentWithClearance } from "./clearance";
+import { onboardNewStudent } from "./onboarding";
 import { getCurrentUserData } from "./users";
+import { getAllOrgs } from "./organization";
 
 const usersCollection: CollectionReference<DocumentData> = collection(
   db,
@@ -440,11 +441,13 @@ export const bulkImportUsers = async (
 
     await batch.commit();
     const user = await getCurrentUserData() as unknown as Member;
+    const allOrgs = await getAllOrgs();
     for (const member of membersToImport) {
       try {
         const docRef = query(collection(db, "users"), where("studentId", "==", member.studentId));
         const snapshot = await getDocs(docRef);
-        await addStudentWithClearance(snapshot.docs[0].id, member, user?.orgId || "");
+        
+        await onboardNewStudent(snapshot.docs[0].id, member as any, allOrgs, user);
       }
       catch (error) {
         result.errors.push({

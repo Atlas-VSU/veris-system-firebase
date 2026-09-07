@@ -56,6 +56,11 @@ export function useFeeGeneration({ studentsCount, onSuccess, onOpenChange }: Use
 
   const handleConfirmedGeneration = async () => {
     if (!pendingFormData) return;
+    
+    // Create local copy and clear state immediately to prevent double-clicks
+    const formData = { ...pendingFormData };
+    setPendingFormData(null);  // <-- synchronous guard
+    
     if (!selected?.isActive) {
       toast.error("Cannot generate fees under an inactive academic term.");
       return;
@@ -73,13 +78,13 @@ export function useFeeGeneration({ studentsCount, onSuccess, onOpenChange }: Use
       if(!currentUser) {
         throw new Error("No user!")
       }
-      if(await checkFeeTitleExist(pendingFormData.title, active?.AY!, active?.semester!)) {
+      if(await checkFeeTitleExist(formData.title, active?.AY!, active?.semester!)) {
         toast.error("Fee title already exists for that academic year and semester!");
         return;
       }
 
       await generateFeesForAllStudentsInAnOrg(
-        pendingFormData,
+        formData,
         currentUser,
         (progress) => {
           setImportProgress(progress.processedCount);

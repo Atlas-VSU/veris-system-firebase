@@ -9,6 +9,7 @@ import { Member } from "../types";
 import { getAllOrgs } from "@/firebase/organization";
 import { getActiveTerm } from "@/firebase/term";
 import { onboardNewStudent } from "@/firebase/onboarding";
+import { findArchivedRecordForStudentId } from "@/firebase/users";
 import { getCurrentUserData, getUserById, updateMemberStatus } from "@/firebase";
 import { useSendRegistrationStatus } from "@/features/auth/components/self-register/hooks/useSendRegistrationStatus";
 
@@ -80,8 +81,30 @@ export function useSelfRegistrations() {
       }
 
       if (action == "approved") {
-        await updateMemberStatus(id, action)
         const user = await getUserById(id);
+
+        // An older retired record may hold this same Student ID — typically one
+        // the roster sync removed. Approving would leave a permanent duplicate
+        // pair: the student's fees, fines and clearance stranded on the retired
+        // document while onboarding creates a fresh set here. Resolving that
+        // means choosing which record survives, so it is referred to an
+        // operator rather than decided automatically.
+        const archivedDuplicate = user?.studentId
+          ? await findArchivedRecordForStudentId(user.studentId, id)
+          : null;
+
+        if (archivedDuplicate) {
+          setProcessing(null);
+          toast.error(
+            `${target.firstName} ${target.lastName} already has a retired record ` +
+            `(${user!.studentId}). Restore it from the Members list instead of approving this ` +
+            `registration — approving would duplicate the student and their charges.`,
+            { duration: 10000 }
+          );
+          return;
+        }
+
+        await updateMemberStatus(id, action)
         const orgs = await getAllOrgs();
         if (user) {
           await onboardNewStudent(id, user as Member, orgs, userData as Member);

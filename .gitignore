@@ -43,3 +43,6 @@ next-env.d.ts
 
 # backend testing
 /testing_backend
+
+#unofficial doc
+.docs/

@@ -3,6 +3,7 @@ import { Member, Program } from "../../members/types";
 import {
   addUser,
   checkStudentIdExist,
+  checkEmailExist,
   getCurrentUserData,
   getProgramByFacultyId,
   getPrograms,
@@ -124,6 +125,10 @@ export function useAddStudentForm({
         setFormErrors({ studentId: "Student ID already exists" });
         return;
       }
+      if (await checkEmailExist(formData.email)) {
+        setFormErrors({ email: "Email already exists" });
+        return;
+      }
       const currentUser = (await getCurrentUserData()) as unknown as Member;
       const facultyId = currentUser.facultyId;
 
@@ -143,7 +148,17 @@ export function useAddStudentForm({
       onStudentAdded(newStudentData);
       onOpenChange(false);
     } catch (error) {
-      console.error("Failed to add student:", error);
+      if (error instanceof Error) {
+        if (error.message === "Student ID already exists.") {
+          setFormErrors({ studentId: "Student ID already exists" });
+        } else if (error.message === "Email already exists.") {
+          setFormErrors({ email: "Email already exists" });
+        } else {
+          console.error("Failed to add student:", error);
+        }
+      } else {
+        console.error("Failed to add student:", error);
+      }
     } finally {
       setIsSubmitting(false);
     }

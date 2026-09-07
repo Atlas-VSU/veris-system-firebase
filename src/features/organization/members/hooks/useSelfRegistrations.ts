@@ -84,14 +84,7 @@ export function useSelfRegistrations() {
         const user = await getUserById(id);
         const orgs = await getAllOrgs();
         if (user) {
-          const studentData = {
-            firstName: user.firstName || "",
-            lastName: user.lastName || "",
-            studentId: user.studentId || "",
-            programId: user.programId,
-            facultyId: user.facultyId,
-          };
-          await onboardNewStudent(id, studentData, orgs, userData);
+          await onboardNewStudent(id, user as Member, orgs, userData as Member);
         }
       }
       else {

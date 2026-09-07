@@ -8,7 +8,6 @@ import {
   getPrograms,
 } from "@/firebase";
 import { isValidStudentId } from "../utils";
-import { createFinePerStudent } from "@/firebase/fines/create/fines";
 import { onboardNewStudent } from "@/firebase/onboarding";
 import { getAllOrgs } from "@/firebase/organization";
 
@@ -137,7 +136,6 @@ export function useAddStudentForm({
       const userId = await addUser(newStudentData);
       
       if (newStudentData.role === "user" && userId) {
-        await createFinePerStudent(userId, newStudentData as Member);
         const allOrgs = await getAllOrgs();
         await onboardNewStudent(userId, newStudentData, allOrgs, currentUser);
       }

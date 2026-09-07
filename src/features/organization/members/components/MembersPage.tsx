@@ -29,7 +29,6 @@ import { getAllOrgs } from "@/firebase/organization";
 import { toast } from "sonner";
 import { BulkImportResultModal } from "@/features/organization/members/components/BulkImportResultModal";
 import { usePaginatedMembers } from "@/features/organization/members/hooks/usePaginatedMembers";
-import { createFinePerStudent } from "@/firebase/fines/create/fines";
 import { Button } from "@/components/ui/button";
 import {
   ChevronLeft,
@@ -157,7 +156,6 @@ export function MembersPage() {
         const currentUser = (await getCurrentUserData()) as unknown as Member;
 
         if (data.role === "user" && userId) {
-          await createFinePerStudent(userId, data);
           const allOrgs = await getAllOrgs();
           await onboardNewStudent(userId, data as any, allOrgs, currentUser);
         }

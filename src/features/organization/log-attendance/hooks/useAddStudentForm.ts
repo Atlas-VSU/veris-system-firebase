@@ -3,12 +3,14 @@ import { Member, Program } from "../../members/types";
 import {
   addUser,
   checkStudentIdExist,
+  checkEmailExist,
   getCurrentUserData,
   getProgramByFacultyId,
   getPrograms,
 } from "@/firebase";
 import { isValidStudentId } from "../utils";
-import { createFinePerStudent } from "@/firebase/fines/create/fines";
+import { onboardNewStudent } from "@/firebase/onboarding";
+import { getAllOrgs } from "@/firebase/organization";
 
 interface useAddStudentFormProps {
   suggestedId: string;
@@ -55,7 +57,7 @@ export function useAddStudentForm({
     const fetchProgramData = async () => {
       try {
         const data = (await getProgramByFacultyId()) as Program[];
-        setProgramData(data);
+        setProgramData(data.sort((a, b) => a.name.localeCompare(b.name)));
       } catch (error) {
         console.error("Failed to fetch program data:", error);
       }
@@ -123,7 +125,11 @@ export function useAddStudentForm({
         setFormErrors({ studentId: "Student ID already exists" });
         return;
       }
-      const currentUser = getCurrentUserData() as unknown as Member;
+      if (await checkEmailExist(formData.email)) {
+        setFormErrors({ email: "Email already exists" });
+        return;
+      }
+      const currentUser = (await getCurrentUserData()) as unknown as Member;
       const facultyId = currentUser.facultyId;
 
       const newStudentData = {
@@ -133,11 +139,26 @@ export function useAddStudentForm({
       };
 
       const userId = await addUser(newStudentData);
-      await createFinePerStudent(userId!, newStudentData as Member);
+      
+      if (newStudentData.role === "user" && userId) {
+        const allOrgs = await getAllOrgs();
+        await onboardNewStudent(userId, newStudentData, allOrgs, currentUser);
+      }
+      
       onStudentAdded(newStudentData);
       onOpenChange(false);
     } catch (error) {
-      console.error("Failed to add student:", error);
+      if (error instanceof Error) {
+        if (error.message === "Student ID already exists.") {
+          setFormErrors({ studentId: "Student ID already exists" });
+        } else if (error.message === "Email already exists.") {
+          setFormErrors({ email: "Email already exists" });
+        } else {
+          console.error("Failed to add student:", error);
+        }
+      } else {
+        console.error("Failed to add student:", error);
+      }
     } finally {
       setIsSubmitting(false);
     }

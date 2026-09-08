@@ -17,19 +17,18 @@ import { MembersPagination } from "@/features/organization/members/components/Me
 import { ViewMode } from "./ViewToggle";
 import { PageHeader } from "@/components/organization/general/PageHeader";
 import {
-  addStudentWithClearance,
   addUser,
-  assignExistingFeesToStudent,
   checkStudentIdExist,
   deleteUser,
   getCurrentUserData,
   processFileForBulkImport,
   updateUser,
 } from "@/firebase";
+import { onboardNewStudent } from "@/firebase/onboarding";
+import { getAllOrgs } from "@/firebase/organization";
 import { toast } from "sonner";
 import { BulkImportResultModal } from "@/features/organization/members/components/BulkImportResultModal";
 import { usePaginatedMembers } from "@/features/organization/members/hooks/usePaginatedMembers";
-import { assignExistingFinesToStudent, createFinePerStudent } from "@/firebase/fines/create/fines";
 import { Button } from "@/components/ui/button";
 import {
   ChevronLeft,
@@ -157,16 +156,8 @@ export function MembersPage() {
         const currentUser = (await getCurrentUserData()) as unknown as Member;
 
         if (data.role === "user" && userId) {
-          await Promise.all([
-            createFinePerStudent(userId, data),
-            addStudentWithClearance(userId, data, currentUser.orgId!),
-          ]);
-          const orgContext = { uid: currentUser.orgId!, accessLevel: currentUser.accessLevel! };
-
-          await Promise.all([
-            assignExistingFeesToStudent(userId, data, orgContext, currentUser),
-            assignExistingFinesToStudent(userId, data, orgContext, currentUser),
-          ]);
+          const allOrgs = await getAllOrgs();
+          await onboardNewStudent(userId, data as any, allOrgs, currentUser);
         }
         toast.success("Member added successfully");
       }

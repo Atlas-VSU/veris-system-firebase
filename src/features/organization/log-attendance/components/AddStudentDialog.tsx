@@ -26,7 +26,7 @@ interface AddStudentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   suggestedId: string;
-  onStudentAdded: (student: Member) => void;
+  onStudentAdded: (student: Member, meta?: { restored: boolean }) => void;
 }
 
 export function AddStudentDialog({
@@ -47,6 +47,10 @@ export function AddStudentDialog({
     handleSubmit,
     programData,
     handleSelectChange,
+    archivedMatch,
+    restoreError,
+    handleRestore,
+    dismissArchivedMatch,
   } = useAddStudentForm({ suggestedId, onStudentAdded, open, onOpenChange });
 
   return (
@@ -261,6 +265,67 @@ export function AddStudentDialog({
             </AlertDescription>
           </Alert>
 
+          {archivedMatch && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 space-y-2">
+              <p className="text-xs font-semibold text-amber-800">
+                This student already has a record that was retired
+              </p>
+              <p className="text-[11px] text-amber-700">
+                <span className="font-medium">
+                  {archivedMatch.member.firstName} {archivedMatch.member.lastName}
+                </span>{" "}
+                ({archivedMatch.member.studentId}) was removed when the roster was last
+                synchronized. Restoring brings back their existing fees, fines and clearance for
+                this term. Adding them as a new student instead would leave that history stranded
+                and charge them twice.
+              </p>
+              <p className="text-[11px] text-amber-700">
+                If this is a different person, correct the Student ID and try again.
+              </p>
+              {archivedMatch.archivedCount > 1 && (
+                <p className="text-[11px] font-semibold text-amber-800">
+                  {archivedMatch.archivedCount} retired records share this Student ID. The
+                  most recently retired one is shown — check it is the right student before
+                  restoring.
+                </p>
+              )}
+              {restoreError && (
+                <p className="text-[11px] font-semibold text-destructive">
+                  {restoreError}
+                </p>
+              )}
+              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={handleRestore}
+                  disabled={isSubmitting}
+                  className="rounded-full cursor-pointer"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <LoaderIcon className="mr-2 h-4 w-4 animate-spin text-primary-foreground" />
+                      Restoring...
+                    </>
+                  ) : (
+                    "Restore Record"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={dismissArchivedMatch}
+                  disabled={isSubmitting}
+                  className="rounded-full cursor-pointer"
+                >
+                  Edit Student ID
+                </Button>
+              </div>
+            </div>
+          )}
+
           <DialogFooter className="pt-2 flex flex-col sm:flex-row gap-2">
             <Button
               type="button"
@@ -274,7 +339,7 @@ export function AddStudentDialog({
             <Button
               type="submit"
               variant="default"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !!archivedMatch}
               className="rounded-full cursor-pointer hover:scale-105"
             >
               {isSubmitting ? (

@@ -23,6 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { FineType } from "../types";
 import { useFineTypeForm } from "../hooks/useFineTypeForm";
 import { FineTypeFormData } from "@/lib/validators";
+import { FineAmountBreakdown } from "./FineAmountBreakdown";
 
 interface FineTypeFormProps {
   initialData?: FineType;
@@ -69,6 +70,13 @@ export function FineTypeForm({
       });
     }
   }, [open, initialData, form]);
+
+  // Watched so the charge breakdown below the amount field updates as the
+  // officer types, rather than only after saving.
+  const watchedName = form.watch("name");
+  const watchedAmount = form.watch("defaultAmount");
+  const watchedRequiresTimeIn = form.watch("requiresTimeIn");
+  const watchedRequiresTimeOut = form.watch("requiresTimeOut");
 
   const handleFormSubmit = async (data: FineTypeFormData) => {
     if (isSubmitting) return;
@@ -154,6 +162,9 @@ export function FineTypeForm({
                         className="!bg-white text-black placeholder:text-gray-600 border-[#2E7D32]/30"
                       />
                     </FormControl>
+                    <p className="text-[11px] text-muted-foreground">
+                      Charged once per missing signature, not once per event.
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -166,6 +177,10 @@ export function FineTypeForm({
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border border-[#2E7D32]/30 p-4 bg-[#8BC34A]/5">
                     <div className="space-y-0.5">
                       <FormLabel className="text-[#1B5E20] font-semibold">Time-out Required</FormLabel>
+                      <p className="text-[11px] text-muted-foreground">
+                        Students must sign both in and out — doubling the most
+                        they can be charged for one event.
+                      </p>
                       <FormMessage />
                     </div>
                     <FormControl>
@@ -176,6 +191,16 @@ export function FineTypeForm({
                     </FormControl>
                   </FormItem>
                 )}
+              />
+
+              {/* Live preview of what the current settings actually bill. */}
+              <FineAmountBreakdown
+                fineType={{
+                  name: watchedName,
+                  defaultAmount: watchedAmount,
+                  requiresTimeIn: watchedRequiresTimeIn,
+                  requiresTimeOut: watchedRequiresTimeOut,
+                }}
               />
               <FormField
                 control={form.control}

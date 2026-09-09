@@ -17,19 +17,31 @@ import { MembersPagination } from "@/features/organization/members/components/Me
 import { ViewMode } from "./ViewToggle";
 import { PageHeader } from "@/components/organization/general/PageHeader";
 import {
-  addStudentWithClearance,
   addUser,
-  assignExistingFeesToStudent,
   checkStudentIdExist,
+  checkEmailExist,
   deleteUser,
   getCurrentUserData,
   processFileForBulkImport,
   updateUser,
 } from "@/firebase";
+import { onboardNewStudent } from "@/firebase/onboarding";
+import { resolveStudentIdentity } from "@/firebase/users";
+import { useStudentRestore } from "@/hooks/useStudentRestore";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { getAllOrgs } from "@/firebase/organization";
 import { toast } from "sonner";
 import { BulkImportResultModal } from "@/features/organization/members/components/BulkImportResultModal";
 import { usePaginatedMembers } from "@/features/organization/members/hooks/usePaginatedMembers";
-import { assignExistingFinesToStudent, createFinePerStudent } from "@/firebase/fines/create/fines";
 import { Button } from "@/components/ui/button";
 import {
   ChevronLeft,
@@ -102,6 +114,16 @@ export function MembersPage() {
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MemberData | null>(null);
+  // Shared with Log Attendance: when a submitted Student ID turns out to belong
+  // to a retired record, this owns the prompt, the restore and its reporting.
+  const {
+    pending: archivedMatch,
+    isRestoring,
+    error: restoreError,
+    promptRestore,
+    dismissRestore,
+    confirmRestore,
+  } = useStudentRestore({ onRestored: () => refreshData() });
   const [importProgress, setImportProgress] = useState(0);
   const [currentBatch, setCurrentBatch] = useState(0);
   const [totalBatches, setTotalBatches] = useState(0);
@@ -148,8 +170,26 @@ export function MembersPage() {
         await updateUser(selectedMember.id, data);
         toast.success("Member updated successfully");
       } else {
-        if (await checkStudentIdExist(data.studentId)) {
+        const identity = await resolveStudentIdentity(data.studentId);
+
+        if (identity.status === "active") {
           toast.error("Student ID already exists. Please use a different one.");
+          return;
+        }
+
+        // A retired record still holds this Student ID. Adding a second one
+        // would strand their fees, fines and clearance on the dead document
+        // and charge them twice — prompt to restore the original instead.
+        if (identity.status === "archived") {
+          promptRestore(identity, data);
+          return;
+        }
+
+        // `addUser` rejects a duplicate address too, but only by throwing into
+        // the generic "Failed to add member" catch below. Checking here names
+        // the actual problem, and matches what the Log Attendance form does.
+        if (await checkEmailExist(data.email)) {
+          toast.error("Email already exists. Please use a different one.");
           return;
         }
 
@@ -157,16 +197,8 @@ export function MembersPage() {
         const currentUser = (await getCurrentUserData()) as unknown as Member;
 
         if (data.role === "user" && userId) {
-          await Promise.all([
-            createFinePerStudent(userId, data),
-            addStudentWithClearance(userId, data, currentUser.orgId!),
-          ]);
-          const orgContext = { uid: currentUser.orgId!, accessLevel: currentUser.accessLevel! };
-
-          await Promise.all([
-            assignExistingFeesToStudent(userId, data, orgContext, currentUser),
-            assignExistingFinesToStudent(userId, data, orgContext, currentUser),
-          ]);
+          const allOrgs = await getAllOrgs();
+          await onboardNewStudent(userId, data as any, allOrgs, currentUser);
         }
         toast.success("Member added successfully");
       }
@@ -412,6 +444,60 @@ export function MembersPage() {
         programData={programs}
         isSubmitting={isFormSubmitting}
       />
+
+      <AlertDialog
+        open={!!archivedMatch}
+        onOpenChange={(open) => !open && dismissRestore()}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>This student already has a retired record</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  <span className="font-medium">
+                    {archivedMatch?.resolution.member.firstName}{" "}
+                    {archivedMatch?.resolution.member.lastName}
+                  </span>{" "}
+                  ({archivedMatch?.resolution.member.studentId}) was removed when the roster was
+                  last synchronized.
+                </p>
+                <p>
+                  Restoring brings back their existing fees, fines and clearance for this term.
+                  Adding them as a new member instead would leave that history stranded on the old
+                  record and charge them twice.
+                </p>
+                <p>If this is a different person, cancel and correct the Student ID.</p>
+                {(archivedMatch?.resolution.archivedCount ?? 0) > 1 && (
+                  <p className="font-medium text-amber-600 dark:text-amber-500">
+                    {archivedMatch!.resolution.archivedCount} retired records share this
+                    Student ID. The most recently retired one is shown — check it is the
+                    right student before restoring.
+                  </p>
+                )}
+                {restoreError && (
+                  <p className="font-medium text-destructive">{restoreError}</p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRestoring}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                // The restore may be refused (an email that now belongs to an
+                // active student). Keep the dialog open so the reason is
+                // readable, and let the operator cancel or retry.
+                event.preventDefault();
+                confirmRestore();
+              }}
+              disabled={isRestoring}
+            >
+              {isRestoring ? "Restoring..." : "Restore Record"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <DeleteConfirmationDialog
         open={isDeleteDialogOpen}

@@ -1,5 +1,9 @@
 
 import { Timestamp } from "firebase/firestore";
+import type {
+  OnSeedProgress,
+  SeedProgress,
+} from "@/features/organization/shared/types";
 
 export type FineType = {
     id?: string;
@@ -138,14 +142,14 @@ export type FineGenerationProgress = {
 export type OnFineProgress = (update: FineGenerationProgress) => void;
 
 
-export type BulkFinesProgress = {
-  phase: "preflight" | "writing" | "done" | "error";
-  message: string;
-  committed: number;
-  totalUsers: number;
-  batchNum?: number;
-  totalBatches?: number;
-};
+/**
+ * Aliases of the shared seeding vocabulary, kept so existing imports across the
+ * fines feature keep working. The shape is declared once in
+ * `@/features/organization/shared/types` — clearance seeds records the same way
+ * and previously carried its own divergent copy of it.
+ */
+export type BulkFinesProgress = SeedProgress;
+export type OnBulkFinesProgress = OnSeedProgress;
 
 export type BulkFinesResult = {
   success: boolean;
@@ -153,8 +157,6 @@ export type BulkFinesResult = {
   committed: number;
   failedAtBatch: number | null; // null = no failure
 };
-
-export type OnBulkFinesProgress = (update: BulkFinesProgress) => void;
 
 export type StudentFineStatus = "unpaid" | "partial" | "paid" | "pending" | "waived";
 

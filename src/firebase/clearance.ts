@@ -780,6 +780,37 @@ export const seedClearanceDocuments = async (user: UserData, term: Term) => {
     cacheService.invalidateByPrefix('clearance:doc:');
   } catch (error) {
     console.error('❌ Error seeding clearance documents:', error);
+    throw error;
+  }
+};
+
+/**
+ * True when this org already has clearance documents for the term.
+ *
+ * Mirrors `checkFineSeededForTerm`. A single matching document is enough — the
+ * question is "has initialization been run", not "is every student covered",
+ * and seeding skips students who already have one, so re-running is safe.
+ */
+export const checkClearanceSeededForTerm = async (
+  orgId: string,
+  term: { AY: string; semester: string }
+) => {
+  try {
+    const seeded = await getDocs(
+      query(
+        collection(db, 'clearanceStatus'),
+        where('orgId', '==', orgId),
+        where('academicYear', '==', term.AY),
+        where('semester', '==', term.semester),
+        limit(1)
+      )
+    );
+    return !seeded.empty;
+  } catch (error) {
+    console.error('❌ Error checking clearance seeding status:', error);
+    // Assume seeded on failure: wrongly showing the roster is recoverable,
+    // wrongly prompting an operator to re-initialize is confusing.
+    return true;
   }
 };
 

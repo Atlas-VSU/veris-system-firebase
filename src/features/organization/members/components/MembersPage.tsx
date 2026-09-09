@@ -19,6 +19,7 @@ import { PageHeader } from "@/components/organization/general/PageHeader";
 import {
   addUser,
   checkStudentIdExist,
+  checkEmailExist,
   deleteUser,
   getCurrentUserData,
   processFileForBulkImport,
@@ -181,6 +182,14 @@ export function MembersPage() {
         // and charge them twice — prompt to restore the original instead.
         if (identity.status === "archived") {
           promptRestore(identity, data);
+          return;
+        }
+
+        // `addUser` rejects a duplicate address too, but only by throwing into
+        // the generic "Failed to add member" catch below. Checking here names
+        // the actual problem, and matches what the Log Attendance form does.
+        if (await checkEmailExist(data.email)) {
+          toast.error("Email already exists. Please use a different one.");
           return;
         }
 

@@ -19,7 +19,7 @@ import { ProofOfPayment } from "../../fines/types"
 import { usePaymentApproval } from "../../payments/hooks/usePaymentApproval"
 import { cacheService, CACHE_KEYS } from "@/services/cacheService";
 import { ITEMS_PER_PAGE } from "../config";
-import { seedClearanceDocuments } from "@/firebase/clearance"
+
 import { useTermPeriod } from "../../term/hooks/useTermPeriod"
 import { getOrgById } from "@/firebase/organization"
 
@@ -32,7 +32,6 @@ export function useClearancePage(orgId: string | undefined) {
   const [viewMode, setViewMode] = useState<ViewMode>("table")
   const [currentPage, setCurrentPage] = useState(1)
   const [needsSeed, setNeedsSeed] = useState(false)
-  const [isSeeding, setIsSeeding] = useState(false)
 
   const { selected } = useTermPeriod()
   const user = useAuth();
@@ -289,21 +288,10 @@ export function useClearancePage(orgId: string | undefined) {
     await baseHardRefresh()
   }
 
-  const handleSeedClearance = async () => {
-    if (!currentUser || isSeeding) return;
-    setIsSeeding(true);
-    try {
-      await seedClearanceDocuments(currentUser, selected as Term);
-      toast.success("Clearance records generated successfully!");
-      setNeedsSeed(false);
-      await baseHardRefresh();
-    } catch (err) {
-      console.error("Seeding clearance failed:", err);
-      toast.error("Failed to generate clearance records. Please try again.");
-    } finally {
-      setIsSeeding(false);
-    }
-  }
+  // Seeding itself lives in `useBulkClearance` / `BulkClearanceDialog`, which
+  // the page opens from the uninitialized notice. This hook only answers
+  // whether the term still `needsSeed`; running the seed from here as well
+  // meant two code paths writing the same records with different reporting.
 
 
   return {
@@ -320,7 +308,6 @@ export function useClearancePage(orgId: string | undefined) {
     AY,
     sem,
     needsSeed,
-    isSeeding,
     
     // UI State
     search,
@@ -353,6 +340,5 @@ export function useClearancePage(orgId: string | undefined) {
     openLogPayment,
     handleLogPayment,
     hardRefresh: handleHardRefresh,
-    handleSeedClearance,
   }
 }

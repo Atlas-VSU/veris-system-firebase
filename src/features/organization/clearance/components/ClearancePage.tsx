@@ -1,6 +1,5 @@
 "use client"
 
-import { toast } from "sonner"
 import { useState, useEffect } from "react"
 
 // UI Components
@@ -9,8 +8,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { DataPagination } from "@/components/organization/general/DataPagination"
 import { PaymentReviewDialog } from "@/components/organization/receipt/PaymentReviewDialog"
 import PaymentReceiptDialog from "@/components/organization/receipt/PaymentReceiptDialog"
-import { Button } from "@/components/ui/button"
-import { AlertCircle, Loader2, Users } from "lucide-react"
 
 // Local Components & Hooks 
 import { ClearanceStats } from "./ClearanceStats"
@@ -18,6 +15,8 @@ import { ClearanceFilters } from "./ClearanceFilters"
 import { useClearancePage } from "../hooks/useClearancePage"
 import { ClearanceCard } from "./ClearanceCard"
 import { ClearanceTable } from "./ClearanceTable"
+import { ClearanceUninitializedState } from "./ClearanceUninitializedState"
+import { BulkClearanceDialog } from "./BulkClearanceDialog"
 import { LogManualPaymentDialog } from "./LogManualPaymentDialog"
 import { CardGridSkeleton } from "@/components/organization/skeleton/CardGridSkeleton"
 import { ITEMS_PER_PAGE } from "../config"
@@ -28,7 +27,8 @@ interface ClearancePageProps {
 
 export default function ClearancePage({ orgId }: ClearancePageProps) {
   const [searchTerm, setSearchTerm] = useState("")
-  
+  const [isInitializeOpen, setIsInitializeOpen] = useState(false)
+
   const {
     clearances,
     loading,
@@ -66,8 +66,6 @@ export default function ClearancePage({ orgId }: ClearancePageProps) {
     hardRefresh,
     hasNextPage,
     needsSeed,
-    isSeeding,
-    handleSeedClearance,
   } = useClearancePage(orgId)
 
   useEffect(() => {
@@ -117,35 +115,18 @@ export default function ClearancePage({ orgId }: ClearancePageProps) {
         disabled={loading}
       />
 
-      {/* Seed Banner — shown once when no records exist for this term */}
-      {needsSeed && !loading && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-700 dark:text-amber-400">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-          <div className="flex flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold">No clearance records found for {sem} · A.Y. {AY}</p>
-              <p className="text-xs opacity-80">Generate clearance records for all students in this term to get started.</p>
-            </div>
-            <Button
-              size="sm"
-              className="mt-2 shrink-0 sm:mt-0 bg-amber-600 hover:bg-amber-700 text-white"
-              onClick={handleSeedClearance}
-              disabled={isSeeding}
-            >
-              {isSeeding ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating…</>
-              ) : (
-                <><Users className="mr-2 h-4 w-4" /> Generate Records</>
-              )}
-            </Button>
-          </div>
-        </div>
-      )}
       <Card className="border-border bg-card">
         <CardHeader></CardHeader>
-        
+
         <CardContent>
-          {viewMode === "card" ? (
+          {/* Nothing exists to list until the term's roster is seeded, so the
+              notice replaces the table rather than sitting above it — the same
+              shape the fines page uses. */}
+          {needsSeed && !loading ? (
+            <ClearanceUninitializedState
+              onInitializeClick={() => setIsInitializeOpen(true)}
+            />
+          ) : viewMode === "card" ? (
             loading && clearances.length === 0 ? (
               <CardGridSkeleton count={6} />
             ) : paginated.length === 0 ? (
@@ -170,16 +151,24 @@ export default function ClearancePage({ orgId }: ClearancePageProps) {
               isLoading={loading && clearances.length === 0}
             />
           )}
-          <DataPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalCount}
-            itemsPerPage={ITEMS_PER_PAGE}
-            onPageChange={setCurrentPage}
-            hasNextPage={hasNextPage}
-          />
+          {!needsSeed && (
+            <DataPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalCount}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+              hasNextPage={hasNextPage}
+            />
+          )}
         </CardContent>
       </Card>
+
+      <BulkClearanceDialog
+        open={isInitializeOpen}
+        onOpenChange={setIsInitializeOpen}
+        onSuccess={handleRefresh}
+      />
 
       <PaymentReviewDialog
         open={paymentReviewOpen}

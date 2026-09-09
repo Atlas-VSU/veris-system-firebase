@@ -3,6 +3,7 @@
 import { DesktopHeader } from "./components/DesktopHeader";
 import { MobileHeader } from "./components/MobileHeader";
 import { TemporaryLogin } from "./components/TemporaryLogin";
+import { StudentPortalButton } from "./components/StudentPortalButton";
 
 import { useState } from "react";
 
@@ -51,6 +52,7 @@ export function HomePageLayout() {
                   Monitor student eligibility, track organizational fees and fines,
                   and verify payment settlements in real-time.
                 </p>
+                <StudentPortalButton />
               </div>
             </div>
 
@@ -97,6 +99,7 @@ export function HomePageLayout() {
               Monitor student eligibility, track organizational fees and fines,
               and verify payment settlements in real-time.
             </p>
+            <StudentPortalButton />
           </div>
 
           {/* Bottom Card section */}

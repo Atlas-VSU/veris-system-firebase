@@ -2,19 +2,22 @@ import { useEffect, useState } from "react";
 import { Member, Program } from "../../members/types";
 import {
   addUser,
-  checkStudentIdExist,
   checkEmailExist,
   getCurrentUserData,
   getProgramByFacultyId,
   getPrograms,
 } from "@/firebase";
+import { resolveStudentIdentity } from "@/firebase/users";
+import { useStudentRestore } from "@/hooks/useStudentRestore";
 import { isValidStudentId } from "../utils";
 import { onboardNewStudent } from "@/firebase/onboarding";
 import { getAllOrgs } from "@/firebase/organization";
 
 interface useAddStudentFormProps {
   suggestedId: string;
-  onStudentAdded: (student: Member) => void;
+  /** `restored` distinguishes bringing a retired record back from creating a
+   *  new student — the two produce very different follow-up messaging. */
+  onStudentAdded: (student: Member, meta?: { restored: boolean }) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -52,6 +55,22 @@ export function useAddStudentForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [programData, setProgramData] = useState<Program[]>([]);
+  // Shared with the Members page: when the Student ID belongs to a retired
+  // record, this owns the prompt, the restore and its reporting, so both
+  // surfaces behave identically.
+  const {
+    pending,
+    isRestoring,
+    error: restoreError,
+    promptRestore,
+    dismissRestore,
+    confirmRestore,
+  } = useStudentRestore({
+    onRestored: (student) => {
+      onStudentAdded(student, { restored: true });
+      onOpenChange(false);
+    },
+  });
 
   useEffect(() => {
     const fetchProgramData = async () => {
@@ -73,8 +92,9 @@ export function useAddStudentForm({
       setConsentChecked(false);
       setShowConsentError(false);
       setFormErrors({});
+      dismissRestore();
     }
-  }, [open, suggestedId]);
+  }, [open, suggestedId, dismissRestore]);
 
   const validateForm = (): boolean => {
     const errors: FormErrors = {};
@@ -112,6 +132,17 @@ export function useAddStudentForm({
     }
   };
 
+  /**
+   * Restores the retired record this Student ID already belongs to, instead of
+   * creating a duplicate. Deliberately does NOT call `onboardNewStudent` —
+   * onboarding backfills a fresh set of fees and fines, which would stack on
+   * top of the ones being reinstated and double-charge the student.
+   *
+   * The work itself, the reporting and the refusal messages all live in
+   * `useStudentRestore`, shared with the Members page.
+   */
+  const handleRestore = () => confirmRestore();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setShowConsentError(!consentChecked);
@@ -121,10 +152,21 @@ export function useAddStudentForm({
     }
     setIsSubmitting(true);
     try {
-      if (await checkStudentIdExist(formData.studentId)) {
+      const identity = await resolveStudentIdentity(formData.studentId);
+
+      if (identity.status === "active") {
         setFormErrors({ studentId: "Student ID already exists" });
         return;
       }
+
+      // A retired record still holds this Student ID. Creating a second one
+      // would strand the student's fees, fines and clearance on the dead
+      // document and charge them twice — offer to bring the original back.
+      if (identity.status === "archived") {
+        promptRestore(identity, { ...formData, role: "user" as const });
+        return;
+      }
+
       if (await checkEmailExist(formData.email)) {
         setFormErrors({ email: "Email already exists" });
         return;
@@ -170,11 +212,15 @@ export function useAddStudentForm({
     setConsentChecked,
     showConsentError,
     setShowConsentError,
-    isSubmitting,
+    isSubmitting: isSubmitting || isRestoring,
     formErrors,
     handleChange,
     handleSubmit,
     programData,
     handleSelectChange,
+    archivedMatch: pending?.resolution ?? null,
+    restoreError,
+    handleRestore,
+    dismissArchivedMatch: dismissRestore,
   };
 }

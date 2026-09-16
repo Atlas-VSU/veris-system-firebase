@@ -8,7 +8,8 @@ export function useSubscriptionTier() {
 
     useEffect(() => {
         const fetchOrg = async () => {
-            const org = await getOrgById(user?.user?.orgId || '');
+            if (!user?.user?.orgId) return;
+            const org = await getOrgById(user.user.orgId);
             setSubscriptionTier(org?.subscriptionTier!);
         }
         fetchOrg();

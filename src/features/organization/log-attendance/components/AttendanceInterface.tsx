@@ -10,11 +10,13 @@ interface AttendanceInterfaceProps {
     studentId: string,
     type: "time-in" | "time-out"
   ) => Promise<void>;
+  onFlash?: (status: "success" | "error") => void;
 }
 
 export function AttendanceInterface({
   event,
   onLogAttendance,
+  onFlash,
 }: AttendanceInterfaceProps) {
   const hasTimeIn = !!event.timeInStart && !!event.timeInEnd;
   const hasTimeOut = !!event.timeOutStart && !!event.timeOutEnd;
@@ -57,6 +59,7 @@ export function AttendanceInterface({
           hasTimeOut={hasTimeOut}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          onFlash={onFlash}
         />
       </div>
 

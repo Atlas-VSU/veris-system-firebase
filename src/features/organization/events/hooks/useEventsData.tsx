@@ -222,6 +222,12 @@ export function useEventsData(currentTab: EventStatus) {
     setCurrentPage(1);
   }, [currentTab]);
 
+  const refresh = useCallback(async () => {
+    cacheService.invalidateByPrefix("ui:events:view:");
+    searchCacheLoadedRef.current = false;
+    await fetchEvents();
+  }, [fetchEvents]);
+
   return {
     events,
     totalEvents,
@@ -235,6 +241,6 @@ export function useEventsData(currentTab: EventStatus) {
     handleSort,
     handleDateChange,
     searchQuery,
-    refresh: fetchEvents,
+    refresh,
   };
 }

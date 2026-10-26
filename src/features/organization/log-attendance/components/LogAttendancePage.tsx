@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AttendanceInterface } from "@/features/organization/log-attendance/components/AttendanceInterface";
 import { PageHeader } from "@/features/organization/log-attendance/components/PageHeader";
 import { Event } from "@/features/organization/events/types";
@@ -30,8 +31,20 @@ export default function LogAttendancePage() {
 
   const [event, setEvent] = useState<Event | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [flashStatus, setFlashStatus] = useState<"success" | "error" | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  const triggerFlash = (status: "success" | "error") => {
+    setFlashStatus(status);
+    const sound = new Audio(
+      status === "success" ? "/sounds/success.mp3" : "/sounds/error.mp3"
+    );
+    sound.play();
+    setTimeout(() => setFlashStatus(null), 1000);
+  };
 
   useEffect(() => {
+    setIsMounted(true);
     setIsLoading(true);
     setTimeout(async () => {
       const foundEvent = await getEventById(eventId as string);
@@ -53,6 +66,7 @@ export default function LogAttendancePage() {
       );
       if (exist) {
         toast.error("Attendance record already exists.");
+        triggerFlash("error");
         return;
       } else {
         await logAttendance({ eventId: eventId as string, studentId, type });
@@ -62,10 +76,12 @@ export default function LogAttendancePage() {
             ? "special attendance logged"
             : `${actionText} successfully`;
         toast.success(`Student ${eventText} for ${event.name}`);
+        triggerFlash("success");
       }
     } catch (error) {
       console.error("Failed to log attendance:", error);
       toast.error("Failed to log attendance. Please try again.");
+      triggerFlash("error");
     }
   };
 
@@ -168,31 +184,44 @@ export default function LogAttendancePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-5 lg:pb-0">
-      {/* Breadcrumb */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link
-                href="/org-events"
-                className="font-nunito-sans text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Events
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage className="font-nunito-sans font-medium">
-              {event.name}
-            </BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+    <>
+      {isMounted && createPortal(
+        <div
+          className={`pointer-events-none fixed inset-0 z-[9999] transition-all duration-500 blur-[0.5px] ${flashStatus === "success"
+              ? "shadow-[inset_0_0_50px_#00A93F] opacity-100"
+              : flashStatus === "error"
+                ? "shadow-[inset_0_0_50px_#dc2626] opacity-100"
+                : "shadow-[inset_0_0_0_transparent] opacity-0"
+            }`}
+        />,
+        document.body
+      )}
+      <div className="flex flex-col gap-6 pb-5 lg:pb-0">
+        {/* Breadcrumb */}
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link
+                  href="/org-events"
+                  className="font-nunito-sans text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Events
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="font-nunito-sans font-medium">
+                {event.name}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
-      <PageHeader event={event} />
-      <AttendanceInterface event={event} onLogAttendance={handleLogAttendance} />
-    </div>
+        <PageHeader event={event} />
+        <AttendanceInterface event={event} onLogAttendance={handleLogAttendance} onFlash={triggerFlash} />
+      </div>
+    </>
   );
 }

@@ -26,7 +26,7 @@ import { useSubscriptionTier } from "../hooks/useSubscriptionTier";
 import { toast } from "sonner";
 
 export default function EventsPage() {
-  const [currentTab, setCurrentTab] = useState<EventStatus>("completed");
+  const [currentTab, setCurrentTab] = useState<EventStatus>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("card");
   const [addOpen, setAddOpen] = useState(false);
   const isMobile = useIsMobile();

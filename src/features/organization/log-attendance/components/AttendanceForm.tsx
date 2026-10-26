@@ -46,6 +46,7 @@ interface AttendanceFormProps {
   hasTimeOut?: boolean;
   activeTab?: "time-in" | "time-out";
   onTabChange?: (tab: "time-in" | "time-out") => void;
+  onFlash?: (status: "success" | "error") => void;
 }
 
 export function AttendanceForm({
@@ -56,6 +57,7 @@ export function AttendanceForm({
   hasTimeOut = false,
   activeTab,
   onTabChange,
+  onFlash,
 }: AttendanceFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -101,6 +103,9 @@ export function AttendanceForm({
     setIsLoading(true);
     const result = await searchById(studentId, currentUser, true);
     setSearchResult(result);
+    if (result.status === "not-found" || result.status === "error" || result.status === "invalid-format") {
+      onFlash?.("error");
+    }
     setIsLoading(false);
   };
 
@@ -135,6 +140,7 @@ export function AttendanceForm({
     try {
       if (await checkAttendanceExists(student.studentId)) {
         toast.error("Attendance record already exists.");
+        onFlash?.("error");
         setIsProcessing(false);
         setIsLoading(false);
         setIsSubmitting(false);
@@ -156,6 +162,7 @@ export function AttendanceForm({
       };
 
       toast.success(getMessage());
+      onFlash?.("success");
       setTimeout(() => {
         resetSearch();
         setIsProcessing(false);
@@ -163,6 +170,7 @@ export function AttendanceForm({
     } catch (error) {
       console.error("Error logging attendance:", error);
       toast.error("Failed to record attendance");
+      onFlash?.("error");
     } finally {
       setIsSubmitting(false);
       setIsLoading(false);
@@ -216,6 +224,7 @@ export function AttendanceForm({
     try {
       if (await checkAttendanceExists(studentId)) {
         toast.error("Attendance record already exists.");
+        onFlash?.("error");
         setIsProcessing(false);
         setIsLoading(false);
         setIsSubmitting(false);
@@ -285,6 +294,7 @@ export function AttendanceForm({
       };
 
       toast.success(getMessage());
+      onFlash?.("success");
       setTimeout(() => {
         resetSearch();
         setIsProcessing(false);
@@ -292,6 +302,7 @@ export function AttendanceForm({
     } catch (error) {
       console.error("Error in submission:", error);
       toast.error("Failed to record attendance");
+      onFlash?.("error");
     } finally {
       setIsSubmitting(false);
       setIsLoading(false);

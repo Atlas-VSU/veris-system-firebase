@@ -45,4 +45,4 @@ next-env.d.ts
 /testing_backend
 
 #unofficial doc
-.docs/
+/docs

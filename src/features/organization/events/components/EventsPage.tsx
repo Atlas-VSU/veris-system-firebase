@@ -239,6 +239,7 @@ export default function EventsPage() {
           });
         }}
         onEventAdded={() => {
+          handlePageChange(1);
           refresh();
           setAddOpen(false);
         }}

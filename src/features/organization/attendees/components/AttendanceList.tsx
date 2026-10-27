@@ -422,10 +422,10 @@ export function AttendanceList({
               </div>
               <div>
                 <h4 className="font-serif font-bold text-base mb-1 text-foreground">
-                  No attendance records
+                  No Attendance Records to Display
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  Attendance data will appear here once students check in
+                  Select a sorting option or adjust your search and filters to display attendance records.
                 </p>
               </div>
             </div>

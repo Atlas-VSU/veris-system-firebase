@@ -19,11 +19,11 @@ import {
 import { ArrowLeftIcon, CalendarIcon } from "lucide-react";
 import Link from "next/link";
 import {
-  checkLogAttendanceExist,
+
   getEventById,
   logAttendance,
 } from "@/firebase";
-import { toast } from "sonner";
+
 
 export default function LogAttendancePage() {
   const params = useParams();
@@ -57,32 +57,9 @@ export default function LogAttendancePage() {
     studentId: string,
     type: "time-in" | "time-out"
   ) => {
-    if (!event) return;
-    try {
-      const exist = await checkLogAttendanceExist(
-        eventId as string,
-        studentId,
-        type
-      );
-      if (exist) {
-        toast.error("Attendance record already exists.");
-        triggerFlash("error");
-        return;
-      } else {
-        await logAttendance({ eventId: eventId as string, studentId, type });
-        const actionText = type === "time-in" ? "checked in" : "checked out";
-        const eventText =
-          event.status === "completed"
-            ? "special attendance logged"
-            : `${actionText} successfully`;
-        toast.success(`Student ${eventText} for ${event.name}`);
-        triggerFlash("success");
-      }
-    } catch (error) {
-      console.error("Failed to log attendance:", error);
-      toast.error("Failed to log attendance. Please try again.");
-      triggerFlash("error");
-    }
+    if (!event || !eventId) throw new Error("Event is unavailable.");
+    // The form owns success/error feedback; failures must reach it.
+    await logAttendance({ eventId, studentId, type });
   };
 
   if (isLoading) {
@@ -220,7 +197,9 @@ export default function LogAttendancePage() {
         </Breadcrumb>
 
         <PageHeader event={event} />
-        <AttendanceInterface event={event} onLogAttendance={handleLogAttendance} onFlash={triggerFlash} />
+        <AttendanceInterface event={event} onLogAttendance={handleLogAttendance} onFlash={triggerFlash} onAttendanceChanged={() => {
+                  if (eventId) void getEventById(eventId).then((updated) => { if (updated) setEvent(updated); });
+                }} />
       </div>
     </>
   );

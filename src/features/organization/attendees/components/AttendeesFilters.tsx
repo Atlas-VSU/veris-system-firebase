@@ -27,7 +27,7 @@ export function AttendeesFilters({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState<"name" | "id">("name");
   const [programs, setPrograms] = useState<Program[]>([]);
-  const [sortValue, setSortValue] = useState("firstName-asc");
+  const [sortValue, setSortValue] = useState("");
   const [programValue, setProgramValue] = useState("all");
 
   useEffect(() => {
@@ -82,6 +82,7 @@ export function AttendeesFilters({
 
         <Select
           value={programValue}
+          disabled
           onValueChange={(value) => {
             setProgramValue(value);
             onProgramFilter(value === "all" ? "" : value);

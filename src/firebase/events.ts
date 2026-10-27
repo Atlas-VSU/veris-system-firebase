@@ -217,6 +217,14 @@ export const getPaginatedEvents = async (
               filterDate,
               selectedTerm
             );
+          } else {
+            // Keep in-memory slice up-to-date with new statuses
+            events.forEach((ev) => {
+              const updated = eventsToUpdate.find((u) => u.id === ev.id);
+              if (updated) {
+                ev.status = determineEventStatus(ev.date);
+              }
+            });
           }
         }
 
@@ -331,6 +339,7 @@ export const addEvent = async (eventData: EventFormData) => {
 
     // Invalidate all event caches after adding a new event
     cacheService.invalidateByPrefix("events:");
+    cacheService.invalidateByPrefix("ui:events:view:");
 
     return docRef.id;
   } catch (error) {
@@ -401,6 +410,7 @@ export const updateEvent = async (
     // Invalidate specific event cache and all paginated events
     cacheService.invalidate(`event:${eventId}`);
     cacheService.invalidateByPrefix("events:");
+    cacheService.invalidateByPrefix("ui:events:view:");
   } catch (error) {
     handleFirestoreError(error, `update event with ID ${eventId}`);
   }
@@ -416,6 +426,7 @@ export const disableFineGeneration = async (eventId: string) => {
     // Invalidate specific event cache and any paginated events
     cacheService.invalidate(`event:${eventId}`);
     cacheService.invalidateByPrefix("events:");
+    cacheService.invalidateByPrefix("ui:events:view:");
   } catch (error) {
     handleFirestoreError(
       error,
@@ -434,6 +445,7 @@ export const incrementEventAttendees = async (eventId: string) => {
     // Invalidate specific event cache and any paginated events
     cacheService.invalidate(`event:${eventId}`);
     cacheService.invalidateByPrefix("events:");
+    cacheService.invalidateByPrefix("ui:events:view:");
   } catch (error) {
     handleFirestoreError(
       error,
@@ -473,6 +485,7 @@ export const updateEventStatuses = async (
 
       // Invalidate all event caches since statuses changed
       cacheService.invalidateByPrefix("events:");
+      cacheService.invalidateByPrefix("ui:events:view:");
     }
 
     return updatesApplied;
@@ -643,6 +656,7 @@ export const archiveEvent = async (eventId: string) => {
     // Invalidate specific event cache and all paginated events
     cacheService.invalidate(`event:${eventId}`);
     cacheService.invalidateByPrefix("events:");
+    cacheService.invalidateByPrefix("ui:events:view:");
   } catch (error) {
     handleFirestoreError(error, `archive event with ID ${eventId}`);
   }
@@ -829,6 +843,7 @@ export const deleteEvent = async (eventId: string) => {
     // Invalidate specific event cache and all paginated events
     cacheService.invalidate(`event:${eventId}`);
     cacheService.invalidateByPrefix("events:");
+    cacheService.invalidateByPrefix("ui:events:view:");
   } catch (error) {
     handleFirestoreError(error, `delete event with ID ${eventId}`);
   }
@@ -842,6 +857,7 @@ export const completeEvent = async (eventId: string) => {
     // Invalidate specific event cache and all paginated events
     cacheService.invalidate(`event:${eventId}`);
     cacheService.invalidateByPrefix("events:");
+    cacheService.invalidateByPrefix("ui:events:view:");
   } catch (error) {
     console.error(`Error updating status for event ${eventId}:`, error);
   }

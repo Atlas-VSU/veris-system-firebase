@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import {
+  AlertTriangle,
   CalendarIcon,
   ClockIcon,
   MapPinIcon,
@@ -30,8 +31,11 @@ import {
 import type { Event } from "../types"
 import { formatDate } from "@/utils/useGeneralUtils"
 import { useTermPeriod } from "../../term/hooks/useTermPeriod"
-import { useEventsData } from "../hooks/useEventsData"
 import { useSubscriptionTier } from "../hooks/useSubscriptionTier"
+import {
+  isFineGenerationInProgress,
+  isFineGenerationInterrupted,
+} from "@/utils/eventStatusUtils"
 
 interface EventCardProps {
   event: Event
@@ -101,6 +105,11 @@ export function EventCard({ event, onEdit, onArchive, onUnarchive, onDelete, onI
 
   const { subscriptionTier } = useSubscriptionTier();
 
+  const fineGenInProgress = isFineGenerationInProgress(event)
+  const fineGenInterrupted = isFineGenerationInterrupted(event)
+  const actionLocked = opLoading || fineGenInProgress
+  const hasSpecialStatus = fineGenInProgress || fineGenInterrupted
+
   const timeDisplay = hasTimeIn || hasTimeOut ? (
     <div className="space-y-0.5">
       {hasTimeIn && (
@@ -157,6 +166,18 @@ export function EventCard({ event, onEdit, onArchive, onUnarchive, onDelete, onI
                   Major
                 </Badge>
               )}
+              {fineGenInProgress && (
+                <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-300 font-semibold text-xs px-2.5 py-1">
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  Generating Fines…
+                </Badge>
+              )}
+              {fineGenInterrupted && (
+                <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-300 font-semibold text-xs px-2.5 py-1">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Issuance Interrupted
+                </Badge>
+              )}
             </div>
 
             {/* Title */}
@@ -180,36 +201,49 @@ export function EventCard({ event, onEdit, onArchive, onUnarchive, onDelete, onI
           {/* Actions */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-8 w-8 shrink-0 transition-opacity ${hasSpecialStatus ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+              >
                 <MoreHorizontalIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
               {event.status === "archived" ? (
                 <>
-                  <DropdownMenuItem onClick={handleUnarchive} disabled={opLoading}>
+                  <DropdownMenuItem onClick={handleUnarchive} disabled={actionLocked}>
                     {opLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Unarchiving…</> : "Unarchive"}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleDelete} className="text-destructive" disabled={opLoading}>
+                  <DropdownMenuItem onClick={handleDelete} className="text-destructive" disabled={actionLocked}>
                     {opLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Deleting…</> : "Delete"}
                   </DropdownMenuItem>
                 </>
               ) : (
                 <>
                   {!event.finesGenerated && event.status === "completed" && (
-                    <DropdownMenuItem onClick={() => onIssueFine(event)} disabled={opLoading || !selected?.isActive || subscriptionTier === "basic"}>
-                      Issue Fines
+                    <DropdownMenuItem
+                      onClick={() => onIssueFine(event)}
+                      disabled={actionLocked || !selected?.isActive || subscriptionTier === "basic"}
+                    >
+                      {fineGenInProgress ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating Fines…</>
+                      ) : fineGenInterrupted ? (
+                        "Resume Fines"
+                      ) : (
+                        "Issue Fines"
+                      )}
                     </DropdownMenuItem>
-                    )}
-                    {event.status === "ongoing" && (
-                      <DropdownMenuItem onClick={() => onMarkAsCompleted(event)} disabled={opLoading}>
-                        Mark as Completed
-                      </DropdownMenuItem>
-                    )}
-                  <DropdownMenuItem onClick={() => onEdit(event)} disabled={opLoading}>
+                  )}
+                  {event.status === "ongoing" && (
+                    <DropdownMenuItem onClick={() => onMarkAsCompleted(event)} disabled={actionLocked}>
+                      Mark as Completed
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => onEdit(event)} disabled={actionLocked}>
                     Edit Event
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleArchive} className="text-destructive" disabled={opLoading}>
+                  <DropdownMenuItem onClick={handleArchive} className="text-destructive" disabled={actionLocked}>
                     {opLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Archiving…</> : "Archive"}
                   </DropdownMenuItem>
                 </>
@@ -293,12 +327,12 @@ export function EventCard({ event, onEdit, onArchive, onUnarchive, onDelete, onI
 
         {/* Action Buttons */}
         {event.status !== "upcoming" && event.status !== "archived" && (
-          <div className={event.finesGenerated ? "mt-auto pt-3 border-t border-border flex flex-col gap-2" : "mt-auto pt-3 border-t border-border flex flex-col gap-2"}>
+          <div className="mt-auto pt-3 border-t border-border flex flex-col gap-2">
             <Button
               asChild
               variant="outline"
               size="sm"
-              className={event.finesGenerated ? "w-full justify-center gap-1.5 h-10 sm:h-9 text-xs font-semibold" : "w-full justify-center gap-1.5 h-10 sm:h-9 text-xs font-semibold"}
+              className="w-full justify-center gap-1.5 h-10 sm:h-9 text-xs font-semibold"
               onClick={handleViewAttendees}
               disabled={viewAttendeesLoading}
             >
@@ -311,23 +345,25 @@ export function EventCard({ event, onEdit, onArchive, onUnarchive, onDelete, onI
               </Link>
             </Button>
 
-            {(event.status === "ongoing" || event.status === "completed") && !event.finesGenerated && (
-              <Button
-                asChild
-                size="sm"
-                className="w-full justify-center gap-1.5 h-10 sm:h-9 text-xs font-bold"
-                onClick={handleLogAttendance}
-                disabled={logAttendanceLoading}
-              >
-                <Link href={`/org-events/${event.id}/log-attendance`}>
-                  {logAttendanceLoading ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" />Loading…</>
-                  ) : (
-                    <><UserPlusIcon className="h-3.5 w-3.5" />{event.status === "completed" ? "Log Special Attendance" : "Log Attendance"}</>
-                  )}
-                </Link>
-              </Button>
-            )}
+            {(event.status === "ongoing" || event.status === "completed") &&
+              !event.finesGenerated &&
+              !fineGenInProgress && (
+                <Button
+                  asChild
+                  size="sm"
+                  className="w-full justify-center gap-1.5 h-10 sm:h-9 text-xs font-bold"
+                  onClick={handleLogAttendance}
+                  disabled={logAttendanceLoading}
+                >
+                  <Link href={`/org-events/${event.id}/log-attendance`}>
+                    {logAttendanceLoading ? (
+                      <><Loader2 className="h-3.5 w-3.5 animate-spin" />Loading…</>
+                    ) : (
+                      <><UserPlusIcon className="h-3.5 w-3.5" />{event.status === "completed" ? "Log Special Attendance" : "Log Attendance"}</>
+                    )}
+                  </Link>
+                </Button>
+              )}
           </div>
         )}
       </CardContent>

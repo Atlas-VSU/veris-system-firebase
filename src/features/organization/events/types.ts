@@ -1,6 +1,8 @@
 // Event status type
 export type EventStatus = "ongoing" | "upcoming" | "completed" | "archived" | "all";
 
+export type EventFineGenerationStatus = "idle" | "generating" | "completed" | "failed";
+
 // Event type
 export type Event = {
   id: string;
@@ -23,4 +25,7 @@ export type Event = {
   manuallyCompleted?: boolean;
   academicYear?: string;
   semester?: string;
+  fineGenerationStatus?: EventFineGenerationStatus;
+  fineGenerationLockId?: string | null;
+  fineGenerationHeartbeatAt?: unknown;
 };

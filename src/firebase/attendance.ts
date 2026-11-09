@@ -148,11 +148,17 @@ export const logAttendance = async ({
     // Invalidate related caches after successful update
     cacheService.invalidateByPrefix(`event-attendees:${eventId}`);
     cacheService.invalidateByPrefix(`recent-attendance:${eventId}`);
+    cacheService.invalidateByPrefix(`attendance-check:${eventId}:`);
+    cacheService.invalidateByPrefix(`event:${eventId}`);
+    cacheService.invalidateByPrefix("events:");
+    cacheService.invalidateByPrefix("ui:events:view:");
+    cacheService.invalidateByPrefix("attendees-all-events");
   } catch (error) {
     handleFirestoreError(
       error,
       `logging attendance for student ${studentId} in event ${eventId}`
     );
+    throw error;
   }
 };
 

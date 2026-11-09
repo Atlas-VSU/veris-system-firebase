@@ -100,6 +100,7 @@ Everything in Basic, plus:
    - Search and filter capabilities
 5. **Attendance Logging**
    - Simple check-in process via student ID or name
+   - CSV bulk special attendance for completed events, with separate check-in/check-out imports, progress, and downloadable row-level reports
    - Real-time display of checked-in students
    - Search and filter functionality
    - Loading skeletons for improved user experience
@@ -160,6 +161,35 @@ Everything in Basic, plus:
 - Mobile application for on-the-go attendance tracking
 - Advanced reporting and analytics
 
+## Bulk Special Attendance
+
+Transfer physical attendance sheets through **Events → Log Special Attendance → Check-in or Check-out → Bulk Attendance**. The action is available only for completed events without generated fines, using the existing event-completion convention. The selected mode must have a configured attendance window.
+
+1. Read the instructions and download the CSV template.
+2. Use exactly one column headed `Student ID`, with one ID per row. Preserve IDs as text, including leading zeros and hyphens.
+3. Upload the `.csv`. Validation checks existing students and attendance without writing attendance.
+4. Review skipped entries and confirm any students outside your program/faculty, consistent with manual attendance.
+5. Confirm the event and mode, then start. Check-in and check-out require **separate imports**.
+6. Review the summary and download the complete row-level report.
+
+```csv
+Student ID
+24-1-00001
+24-1-00002
+```
+
+Missing or ambiguous students, invalid entries, duplicates, and existing timestamps do not stop other valid rows. Missing IDs may indicate typing errors or outdated registration after a transfer/shift; the system does not infer the cause or automatically register/restore students. Existing timestamps found during bulk lookup are skipped; do not run overlapping attendance writes. Attendance timestamps record when the import is applied, not a reconstructed time from the paper sheet.
+
+There is no arbitrary total student-count limit. Entries are processed sequentially in groups of 50, with fresh event/operator/organization checks before each group. IDs must match `XX-1-XXXXX`, where each `X` is a digit 0–9 and the middle digit is always `1` (for example, `24-1-00001`). Invalid formats are skipped and reported. Transient **reads** receive up to three retries after the initial attempt, with backoff and jitter; the application never resends an uncertain mutation. All bulk queries/writes live in `src/firebase/bulkAttendance.ts` and use the browser Firebase SDK directly. There is no attendance HTTP API, Admin dependency, or hosting-route timeout. Other server features may still require Admin credentials.
+
+Bulk keeps the existing auto-generated attendance IDs. Each new record and its event attendee-count increment commit together in a `writeBatch`; an existing row receives only the selected timestamp and derived status, preferring a row with the opposite timestamp. Existing timestamps found by the fresh attendance query are skipped. There are no transactions, schema migrations, or cross-browser uniqueness guarantees. Manual attendance keeps its original query/create/update behavior, including its timestamp-overwrite and unknown-student fallback semantics; only error propagation and cache invalidation were expanded.
+
+Keep the page open: execution is browser-driven, not a background job. Cancellation stops further work when observed but **cannot cancel an already-submitted Firebase SDK commit**. After a transient write failure, the application reads the exact target document: if the selected timestamp is present, it reports `already_recorded` (confirmed present, not necessarily created by this attempt). Otherwise it stops and reports remaining entries as `not_processed`/unconfirmed. Pending SDK commits may still complete. **Avoid simultaneous imports or manual writes for the same students; inspect attendance before re-uploading after interruption.** This is not a globally guaranteed safe-retry or uniqueness mechanism.
+
+**Deployment/security:** Browser checks are not a security authority. Verify deployed rules for existing user/organization/event reads, student/attendance queries, attendance creates/updates, target-document reconciliation reads, and event-count writes. No new collections or rule schema are required; no broad rules or indexes were added. Lookup and mutation are not atomic, historical duplicates/counters are not repaired, and browser memory, connectivity, and service quotas constrain large imports.
+
+Fine generation is unchanged. Bulk checks `finesGenerated` before each group; it does not coordinate with fine-generation startup. Finish and verify attendance before generating fines, and do not run them simultaneously. See `BULK_SPECIAL_ATTENDANCE_REPORT.md` for the inventory, operational caveats, and detailed staging UAT checklist. The simplified implementation passed build, TypeScript, and targeted new-file lint checks; manual UAT is not executed. No automated tests or testing tooling were added.
+
 ## Getting Started
 
 ### Prerequisites
@@ -195,7 +225,7 @@ pnpm install
    cp .env.local.example .env.local
    ```
    
-   Then edit `.env.local` with your Firebase configuration. You'll need both client and admin SDK credentials:
+   Then edit `.env.local` with your Firebase configuration. Attendance uses the client SDK; existing server features also use Admin SDK credentials:
    
    **Client SDK (Browser-side):**
    ```
@@ -258,7 +288,7 @@ To obtain the required Firebase credentials for the USSC instance:
 2. Click "Create database"
 3. Choose production mode (or test mode for development)
 4. Select a location close to your users
-5. The database will be created with the required security rules
+5. Review and deploy appropriate security rules; creating the database does not install the application's required permissions. In particular, verify the existing attendance query/write permissions and atomic new-record/count batch described above.
 
 ### Firebase Authentication Setup
 

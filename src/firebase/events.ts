@@ -82,7 +82,7 @@ export const getPaginatedEvents = async (
   status?: "ongoing" | "upcoming" | "completed" | "archived" | "all",
   sortField: string = "date",
   sortDirection: "asc" | "desc" = "desc",
-  pageSize: number = 5,
+  pageSize: number = 6,
   startAfterDoc?: QueryDocumentSnapshot<DocumentData> | null,
   searchQuery?: string,
   skip: number = 0,
@@ -712,7 +712,6 @@ export const deleteEvent = async (eventId: string) => {
         if (isWaived) {
           existing.accumulatedDeduct += amount;
           existing.waivedDeduct += amount;
-          totalFinesDeduct += amount;
         } else if (isPaid) {
           totalCollectedDeduct += amount;
           totalFinesDeduct += amount;
@@ -836,28 +835,29 @@ export const deleteEvent = async (eventId: string) => {
           getDocs(
             query(
               collection(db, "clearanceStatus"),
-              where("orgId", "==", currentEvent.orgId),
-              where("academicYear", "==", currentEvent.academicYear),
               where("userId", "in", chunk)
             )
           ),
           getDocs(
             query(
               collection(db, "proofOfPayments"),
-              where("orgId", "==", currentEvent.orgId),
-              where("academicYear", "==", currentEvent.academicYear),
-              where("semester", "==", currentEvent.semester),
               where("userId", "in", chunk)
             )
           ),
         ]);
 
-        cSnap.docs.forEach((d) =>
-          clearanceDocs.push({ id: d.id, ...d.data() } as ClearanceStatus)
-        );
-        pSnap.docs.forEach((d) =>
-          proofDocs.push({ id: d.id, ...d.data() } as ProofOfPayment)
-        );
+        cSnap.docs.forEach((d) => {
+          const data = d.data();
+          if (!currentEvent.orgId || data.orgId === currentEvent.orgId) {
+            clearanceDocs.push({ id: d.id, ...data } as ClearanceStatus);
+          }
+        });
+        pSnap.docs.forEach((d) => {
+          const data = d.data();
+          if (!currentEvent.orgId || data.orgId === currentEvent.orgId) {
+            proofDocs.push({ id: d.id, ...data } as ProofOfPayment);
+          }
+        });
       }
 
       // Remove deleted event's fineItems from clearance blockingItems and recompute clearance status

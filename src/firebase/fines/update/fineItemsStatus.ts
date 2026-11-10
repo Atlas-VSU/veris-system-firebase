@@ -4,7 +4,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  increment,
   query,
   Timestamp,
   updateDoc,
@@ -97,7 +96,6 @@ export const markFineItemAsWaived = async (
     const fineItemsRef = doc(db, "fines", fineId, "fineItems", fineItem.id);
     const waivedReason = waiveReason ? waiveReason : "";
     const currUser = (await getCurrentUserData()) as unknown as Member;
-    const wasUnpaid = !fineItem.isPaid && !fineItem.isWaived;
     const now = Timestamp.now();
 
     await updateDoc(fineItemsRef, {
@@ -118,21 +116,6 @@ export const markFineItemAsWaived = async (
     if (fineSnap.exists()) {
       const fineData = fineSnap.data() as StudentFines;
       const activeTerm = term || (await getActiveTerm());
-
-      // Decrement unpaid fines on organization stats when waiving an unpaid item
-      if (activeTerm && currUser.orgId && wasUnpaid && fineItem.amount > 0) {
-        const statsRef = doc(
-          db,
-          "stats",
-          `${activeTerm.AY}-${activeTerm.semester}-${currUser.orgId}`
-        );
-        await updateDoc(statsRef, {
-          totalUnpaidFines: increment(-fineItem.amount),
-          updatedAt: now,
-        }).catch((err) => {
-          console.warn("Could not decrement stats on waive:", err);
-        });
-      }
 
       if (activeTerm && fineData.userId && currUser.orgId) {
         const id = buildClearanceId(

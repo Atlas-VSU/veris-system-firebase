@@ -114,8 +114,8 @@ export const updateFineStats = async (customId: string, toAdd?: number, toDeduct
             }
             //Since waiving means no collection, we only deduct from total fines and total unpaid fines.
             if (toWaive) {
-                statsData.totalUnpaidFines -= toWaive;
-                statsData.totalFines -= toWaive;
+                statsData.totalUnpaidFines = Math.max(0, statsData.totalUnpaidFines - toWaive);
+                statsData.totalFines = Math.max(0, statsData.totalFines - toWaive);
             }
         } else {
             const currUser = await getCurrentUserData() as unknown as Member;

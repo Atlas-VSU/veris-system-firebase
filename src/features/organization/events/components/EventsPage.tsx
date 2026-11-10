@@ -74,7 +74,7 @@ export default function EventsPage() {
     handleDateChange,
     searchQuery,
     refresh,
-  } = useEventsData(currentTab);
+  } = useEventsData(currentTab, viewMode);
 
   const {
       fineTypes,

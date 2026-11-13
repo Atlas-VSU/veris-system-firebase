@@ -3,6 +3,7 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDocsFromServer,
   Timestamp,
   doc,
   updateDoc,
@@ -10,9 +11,12 @@ import {
   where,
   writeBatch,
   getDoc,
+  getDocFromServer,
+  runTransaction,
   orderBy,
   QueryDocumentSnapshot,
   DocumentData,
+  DocumentReference,
   getCountFromServer,
   increment,
   collectionGroup,
@@ -42,6 +46,7 @@ import {
   determineFineStatus,
   isActiveFineItem,
 } from "@/features/organization/fines/utils/fineComputations";
+import { applyFineStatsDeltaInTx } from "./stats/update/updateStats";
 
 const eventsCollection = collection(db, "events");
 
@@ -619,19 +624,355 @@ export const archiveEvent = async (eventId: string) => {
   }
 };
 
+const DELETE_TX_CHUNK_SIZE = 25;
+
+const invalidateEventDeletionCaches = (eventId: string) => {
+  cacheService.invalidate(`event:${eventId}`);
+  cacheService.invalidateByPrefix("events:");
+  cacheService.invalidateByPrefix("ui:events:view:");
+  cacheService.invalidateByPrefix("fines:");
+  cacheService.invalidateByPrefix("clearance:");
+};
+
+/**
+ * Atomically archives active fineItems, decrements parent fine totals (including
+ * paidAmount for paid items), and decrements org stats in bounded transactions.
+ * Because each chunk commits all three together, retries never double-deduct or skip stats.
+ */
+const archiveEventFineItemsChunked = async (
+  eventDocRef: DocumentReference,
+  currentEvent: Event,
+  activeItemDocs: QueryDocumentSnapshot<DocumentData>[],
+  now: Timestamp
+) => {
+  const parentItemRefsMap = new Map<string, DocumentReference[]>();
+  const orphanedItemRefs: DocumentReference[] = [];
+
+  for (const itemDoc of activeItemDocs) {
+    const data = itemDoc.data() as FineItem;
+    const parentId = itemDoc.ref.parent.parent?.id || data.parentFineId || "";
+    if (!parentId) {
+      orphanedItemRefs.push(itemDoc.ref);
+      continue;
+    }
+    const refs = parentItemRefsMap.get(parentId) ?? [];
+    refs.push(itemDoc.ref);
+    parentItemRefsMap.set(parentId, refs);
+  }
+
+  const statsId =
+    currentEvent.academicYear && currentEvent.semester && currentEvent.orgId
+      ? `${currentEvent.academicYear}-${currentEvent.semester}-${currentEvent.orgId}`
+      : null;
+  const statsRef = statsId ? doc(db, "stats", statsId) : null;
+
+  const parentEntries = Array.from(parentItemRefsMap.entries());
+  for (let i = 0; i < parentEntries.length; i += DELETE_TX_CHUNK_SIZE) {
+    const chunk = parentEntries.slice(i, i + DELETE_TX_CHUNK_SIZE);
+
+    await runTransaction(db, async (transaction) => {
+      const txEventSnap = await transaction.get(eventDocRef);
+      if (!txEventSnap.exists() || txEventSnap.data()?.isDeleted === true) {
+        return;
+      }
+      const txEventData = transformEventData({
+        id: txEventSnap.id,
+        data: () => txEventSnap.data(),
+      });
+      if (isFineGenerationInProgress(txEventData)) {
+        throw new Error(
+          "Fine generation is running for this event. Deletion stopped."
+        );
+      }
+
+      const statsSnap = statsRef ? await transaction.get(statsRef) : null;
+      const parentReads = await Promise.all(
+        chunk.map(async ([parentId, itemRefs]) => {
+          const fineRef = doc(db, "fines", parentId);
+          const [fineSnap, itemSnaps] = await Promise.all([
+            transaction.get(fineRef),
+            Promise.all(itemRefs.map((ref) => transaction.get(ref))),
+          ]);
+          return { fineRef, fineSnap, itemSnaps };
+        })
+      );
+
+      const txNow = Timestamp.now();
+      let totalFinesDeduct = 0;
+      let totalUnpaidDeduct = 0;
+      let totalCollectedDeduct = 0;
+
+      for (const { fineRef, fineSnap, itemSnaps } of parentReads) {
+        let itemCountDeduct = 0;
+        let accumulatedDeduct = 0;
+        let paidDeduct = 0;
+        let waivedDeduct = 0;
+
+        for (const itemSnap of itemSnaps) {
+          if (!itemSnap.exists()) continue;
+          const itemData = itemSnap.data() as FineItem;
+          if (!isActiveFineItem(itemData as unknown as Record<string, unknown>)) {
+            continue;
+          }
+
+          const amount = Number(itemData.amount ?? 0);
+          const isPaid = Boolean(itemData.isPaid);
+          const isWaived = Boolean(itemData.isWaived);
+
+          itemCountDeduct += 1;
+          if (isWaived) {
+            accumulatedDeduct += amount;
+            waivedDeduct += amount;
+          } else if (isPaid) {
+            accumulatedDeduct += amount;
+            paidDeduct += amount;
+            totalCollectedDeduct += amount;
+            totalFinesDeduct += amount;
+          } else {
+            accumulatedDeduct += amount;
+            totalUnpaidDeduct += amount;
+            totalFinesDeduct += amount;
+          }
+
+          transaction.update(itemSnap.ref, {
+            isArchived: true,
+            "metadata.isArchived": true,
+            "metadata.updatedAt": txNow,
+          });
+        }
+
+        if (itemCountDeduct > 0 && fineSnap.exists()) {
+          const parentData = fineSnap.data() as StudentFines;
+          const nextCount = Math.max(
+            0,
+            Number(parentData.fineItemsCount ?? 0) - itemCountDeduct
+          );
+          const nextAccumulated = Math.max(
+            0,
+            Number(parentData.accumulatedAmount ?? 0) - accumulatedDeduct
+          );
+          const nextPaid = Math.max(
+            0,
+            Number(parentData.paidAmount ?? 0) - paidDeduct
+          );
+          const nextWaived = Math.max(
+            0,
+            Number(parentData.waivedAmount ?? 0) - waivedDeduct
+          );
+          const nextBalance = Math.max(
+            0,
+            nextAccumulated - nextPaid - nextWaived
+          );
+          const nextStatus = determineFineStatus({
+            activeItemCount: nextCount,
+            balance: nextBalance,
+            paidAmount: nextPaid,
+            waivedAmount: nextWaived,
+            hasPending:
+              parentData.status === FineStatus.PENDING && nextBalance > 0,
+          });
+
+          transaction.update(fineRef, {
+            fineItemsCount: nextCount,
+            accumulatedAmount: nextAccumulated,
+            paidAmount: nextPaid,
+            balance: nextBalance,
+            waivedAmount: nextWaived > 0 ? nextWaived : null,
+            status: nextStatus,
+            "metadata.updatedAt": txNow,
+          });
+        }
+      }
+
+      if (
+        statsRef &&
+        statsSnap?.exists() &&
+        (totalFinesDeduct > 0 ||
+          totalUnpaidDeduct > 0 ||
+          totalCollectedDeduct > 0)
+      ) {
+        applyFineStatsDeltaInTx(
+          transaction,
+          statsRef,
+          statsSnap,
+          {
+            customId: statsId!,
+            orgId: currentEvent.orgId!,
+            totalStudents: 0,
+          },
+          {
+            totalFinesDelta: -totalFinesDeduct,
+            totalUnpaidDelta: -totalUnpaidDeduct,
+            totalCollectedDelta: -totalCollectedDeduct,
+          }
+        );
+      }
+
+      transaction.update(eventDocRef, {
+        deletionHeartbeatAt: txNow,
+      });
+    });
+  }
+
+  // Archive any orphaned fineItems missing a parentId
+  for (let i = 0; i < orphanedItemRefs.length; i += 450) {
+    const batch = writeBatch(db);
+    for (const ref of orphanedItemRefs.slice(i, i + 450)) {
+      batch.update(ref, {
+        isArchived: true,
+        "metadata.isArchived": true,
+        "metadata.updatedAt": now,
+      });
+    }
+    await batch.commit();
+  }
+};
+
+/**
+ * Idempotently strips deleted event fineItem references from clearanceStatus and
+ * moves them to metadata.refundables on proofOfPayments across all event items
+ * (both active and already-archived from any prior interrupted run).
+ */
+const cleanupEventClearanceAndProofs = async (
+  currentEvent: Event,
+  allItemDocs: QueryDocumentSnapshot<DocumentData>[],
+  now: Timestamp
+) => {
+  const allRemovedItemIds = new Set<string>();
+  const affectedUserIds = new Set<string>();
+  const missingUserParentIds = new Set<string>();
+
+  for (const itemDoc of allItemDocs) {
+    allRemovedItemIds.add(itemDoc.id);
+    const data = itemDoc.data() as FineItem;
+    if (data.userId) {
+      affectedUserIds.add(data.userId);
+    } else {
+      const parentId = itemDoc.ref.parent.parent?.id || data.parentFineId || "";
+      if (parentId) missingUserParentIds.add(parentId);
+    }
+  }
+
+  if (missingUserParentIds.size > 0) {
+    const parentIds = Array.from(missingUserParentIds);
+    for (let i = 0; i < parentIds.length; i += 30) {
+      const chunk = parentIds.slice(i, i + 30);
+      const snap = await getDocsFromServer(
+        query(collection(db, "fines"), where(documentId(), "in", chunk))
+      );
+      snap.docs.forEach((d) => {
+        const userId = (d.data() as StudentFines).userId;
+        if (userId) affectedUserIds.add(userId);
+      });
+    }
+  }
+
+  const userIdList = Array.from(affectedUserIds);
+  const clearanceDocs: ClearanceStatus[] = [];
+  const proofDocs: ProofOfPayment[] = [];
+
+  for (let i = 0; i < userIdList.length; i += 30) {
+    const chunk = userIdList.slice(i, i + 30);
+    const [cSnap, pSnap] = await Promise.all([
+      getDocsFromServer(
+        query(collection(db, "clearanceStatus"), where("userId", "in", chunk))
+      ),
+      getDocsFromServer(
+        query(collection(db, "proofOfPayments"), where("userId", "in", chunk))
+      ),
+    ]);
+
+    cSnap.docs.forEach((d) => {
+      const data = d.data();
+      if (!currentEvent.orgId || data.orgId === currentEvent.orgId) {
+        clearanceDocs.push({ id: d.id, ...data } as ClearanceStatus);
+      }
+    });
+    pSnap.docs.forEach((d) => {
+      const data = d.data();
+      if (!currentEvent.orgId || data.orgId === currentEvent.orgId) {
+        proofDocs.push({ id: d.id, ...data } as ProofOfPayment);
+      }
+    });
+  }
+
+  let batch = writeBatch(db);
+  let operationCount = 0;
+  const batchPromises: Promise<void>[] = [];
+
+  const flushBatch = () => {
+    if (operationCount > 0) {
+      batchPromises.push(batch.commit());
+      batch = writeBatch(db);
+      operationCount = 0;
+    }
+  };
+
+  for (const clearance of clearanceDocs) {
+    const currentBlocking = { ...(clearance.blockingItems ?? {}) } as Record<
+      string,
+      any
+    >;
+    const matchedIds = Object.keys(currentBlocking).filter((key) =>
+      allRemovedItemIds.has(key)
+    );
+    if (matchedIds.length === 0) continue;
+
+    const updatePayload: Record<string, any> = { updatedAt: now };
+    for (const id of matchedIds) {
+      delete currentBlocking[id];
+      updatePayload[`blockingItems.${id}`] = deleteField();
+    }
+    const nextClearanceStatus =
+      deriveClearanceStatusFromBlockingItems(currentBlocking);
+    updatePayload.status = nextClearanceStatus;
+    updatePayload.clearanceDate =
+      nextClearanceStatus === "cleared" ? now : null;
+
+    batch.update(doc(db, "clearanceStatus", clearance.id), updatePayload);
+    operationCount++;
+    if (operationCount === 450) flushBatch();
+  }
+
+  for (const proof of proofDocs) {
+    const items = proof.metadata?.items ?? [];
+    const matchingItems = items.filter((i) => allRemovedItemIds.has(i.refId));
+    if (matchingItems.length === 0) continue;
+
+    const paymentRef = doc(db, "proofOfPayments", proof.id!);
+    const archiveProof = items.length === matchingItems.length;
+    batch.update(paymentRef, {
+      "metadata.items": arrayRemove(...matchingItems),
+      "metadata.refundables": arrayUnion(...matchingItems),
+      ...(archiveProof ? { isArchived: true } : {}),
+    });
+    operationCount++;
+    if (operationCount === 450) flushBatch();
+  }
+
+  flushBatch();
+  await Promise.all(batchPromises);
+};
+
 export const deleteEvent = async (eventId: string) => {
   try {
     const eventDocRef = doc(db, "events", eventId);
-    const eventSnap = await getDoc(eventDocRef);
+    const eventSnap = await getDocFromServer(eventDocRef);
     if (!eventSnap.exists()) {
       throw new Error(
         "Event not found or you don't have permission to delete it"
       );
     }
 
+    const rawEventData = eventSnap.data();
+    if (rawEventData?.isDeleted === true) {
+      invalidateEventDeletionCaches(eventId);
+      return;
+    }
+
     const currentEvent = transformEventData({
       id: eventSnap.id,
-      data: () => eventSnap.data(),
+      data: () => rawEventData,
     });
 
     if (isFineGenerationInProgress(currentEvent)) {
@@ -640,283 +981,50 @@ export const deleteEvent = async (eventId: string) => {
       );
     }
 
-    // Check for any active fineItems for this event (handles both completed and interrupted runs)
-    const subCollectionGroupRef = collectionGroup(db, "fineItems");
-    const q = query(subCollectionGroupRef, where("eventId", "==", eventId));
-    const querySnapshot = await getDocs(q);
-    const activeItemDocs = querySnapshot.docs.filter((d) =>
-      isActiveFineItem(d.data() as Record<string, unknown>)
-    );
+    await updateDoc(eventDocRef, {
+      deletionStatus: "deleting",
+      deletionHeartbeatAt: Timestamp.now(),
+    });
 
-    if (activeItemDocs.length > 0) {
-      const now = Timestamp.now();
-      let batch = writeBatch(db);
-      let operationCount = 0;
-      const batchPromises: Promise<void>[] = [];
+    try {
+      const subCollectionGroupRef = collectionGroup(db, "fineItems");
+      const q = query(subCollectionGroupRef, where("eventId", "==", eventId));
+      const querySnapshot = await getDocsFromServer(q);
+      const allItemDocs = querySnapshot.docs;
 
-      const flushBatch = () => {
-        if (operationCount > 0) {
-          batchPromises.push(batch.commit());
-          batch = writeBatch(db);
-          operationCount = 0;
-        }
-      };
+      if (allItemDocs.length > 0) {
+        const now = Timestamp.now();
+        const activeItemDocs = allItemDocs.filter((d) =>
+          isActiveFineItem(d.data() as Record<string, unknown>)
+        );
 
-      interface ParentDelta {
-        itemCountDeduct: number;
-        accumulatedDeduct: number;
-        balanceDeduct: number;
-        waivedDeduct: number;
-        itemIds: string[];
-        userId?: string;
-      }
-
-      const parentDeltas = new Map<string, ParentDelta>();
-      let totalFinesDeduct = 0;
-      let totalUnpaidDeduct = 0;
-      let totalCollectedDeduct = 0;
-
-      // 1. Archive all active fineItems and aggregate deltas per parent fine & org stats
-      for (const itemDoc of activeItemDocs) {
-        const data = itemDoc.data() as FineItem;
-        const parentId = itemDoc.ref.parent.parent?.id || data.parentFineId || "";
-        const amount = Number(data.amount ?? 0);
-        const isPaid = Boolean(data.isPaid);
-        const isWaived = Boolean(data.isWaived);
-
-        batch.update(itemDoc.ref, {
-          isArchived: true,
-          "metadata.isArchived": true,
-          "metadata.updatedAt": now,
-        });
-        operationCount++;
-        if (operationCount === 450) flushBatch();
-
-        if (!parentId) continue;
-
-        const existing = parentDeltas.get(parentId) ?? {
-          itemCountDeduct: 0,
-          accumulatedDeduct: 0,
-          balanceDeduct: 0,
-          waivedDeduct: 0,
-          itemIds: [],
-          userId: data.userId,
-        };
-
-        existing.itemCountDeduct += 1;
-        existing.itemIds.push(itemDoc.id);
-        if (!existing.userId && data.userId) {
-          existing.userId = data.userId;
+        if (activeItemDocs.length > 0) {
+          await archiveEventFineItemsChunked(
+            eventDocRef,
+            currentEvent,
+            activeItemDocs,
+            now
+          );
         }
 
-        if (isWaived) {
-          existing.accumulatedDeduct += amount;
-          existing.waivedDeduct += amount;
-        } else if (isPaid) {
-          totalCollectedDeduct += amount;
-          totalFinesDeduct += amount;
-        } else {
-          existing.accumulatedDeduct += amount;
-          existing.balanceDeduct += amount;
-          totalUnpaidDeduct += amount;
-          totalFinesDeduct += amount;
-        }
-
-        parentDeltas.set(parentId, existing);
+        await cleanupEventClearanceAndProofs(currentEvent, allItemDocs, now);
       }
 
-      flushBatch();
-      await Promise.all(batchPromises);
-      batchPromises.length = 0;
+      // Mark the event as soft-deleted only AFTER all fine/clearance/stats cleanups succeed
+      await updateDoc(eventDocRef, {
+        isDeleted: true,
+        deletionStatus: "completed",
+        deletionHeartbeatAt: Timestamp.now(),
+      });
 
-      // 2. Fetch affected parent fine docs in chunks of 30 and update their totals & status atomically
-      const parentIds = Array.from(parentDeltas.keys());
-      const parentDocsMap = new Map<string, StudentFines>();
-      for (let i = 0; i < parentIds.length; i += 30) {
-        const chunk = parentIds.slice(i, i + 30);
-        const snap = await getDocs(
-          query(collection(db, "fines"), where(documentId(), "in", chunk))
-        );
-        snap.docs.forEach((d) =>
-          parentDocsMap.set(d.id, { id: d.id, ...d.data() } as StudentFines)
-        );
-      }
-
-      const affectedUserIds = new Set<string>();
-      const allRemovedItemIds = new Set<string>();
-
-      for (const [parentId, delta] of parentDeltas.entries()) {
-        delta.itemIds.forEach((id) => allRemovedItemIds.add(id));
-        const parentData = parentDocsMap.get(parentId);
-        const userId = delta.userId || parentData?.userId;
-        if (userId) affectedUserIds.add(userId);
-
-        if (!parentData) continue;
-
-        const nextCount = Math.max(
-          0,
-          Number(parentData.fineItemsCount ?? 0) - delta.itemCountDeduct
-        );
-        const nextAccumulated = Math.max(
-          0,
-          Number(parentData.accumulatedAmount ?? 0) - delta.accumulatedDeduct
-        );
-        const paidAmt = Number(parentData.paidAmount ?? 0);
-        const nextWaived = Math.max(
-          0,
-          Number(parentData.waivedAmount ?? 0) - delta.waivedDeduct
-        );
-        const nextBalance = Math.max(
-          0,
-          nextAccumulated - paidAmt - nextWaived
-        );
-        const nextStatus = determineFineStatus({
-          activeItemCount: nextCount,
-          balance: nextBalance,
-          paidAmount: paidAmt,
-          waivedAmount: nextWaived,
-          hasPending: parentData.status === FineStatus.PENDING && nextBalance > 0,
-        });
-
-        batch.update(doc(db, "fines", parentId), {
-          fineItemsCount: nextCount,
-          accumulatedAmount: nextAccumulated,
-          balance: nextBalance,
-          waivedAmount: nextWaived > 0 ? nextWaived : null,
-          status: nextStatus,
-          "metadata.updatedAt": now,
-        });
-        operationCount++;
-        if (operationCount === 450) flushBatch();
-      }
-
-      flushBatch();
-      await Promise.all(batchPromises);
-      batchPromises.length = 0;
-
-      // 3. Apply a single aggregated update to the organization's stats document
-      if (
-        currentEvent.academicYear &&
-        currentEvent.semester &&
-        currentEvent.orgId &&
-        (totalFinesDeduct > 0 || totalUnpaidDeduct > 0 || totalCollectedDeduct > 0)
-      ) {
-        const statsRef = doc(
-          db,
-          "stats",
-          `${currentEvent.academicYear}-${currentEvent.semester}-${currentEvent.orgId}`
-        );
-        const statsSnap = await getDoc(statsRef);
-        if (statsSnap.exists()) {
-          const sData = statsSnap.data();
-          await updateDoc(statsRef, {
-            totalFines: Math.max(0, Number(sData.totalFines ?? 0) - totalFinesDeduct),
-            totalUnpaidFines: Math.max(
-              0,
-              Number(sData.totalUnpaidFines ?? 0) - totalUnpaidDeduct
-            ),
-            totalCollectedFines: Math.max(
-              0,
-              Number(sData.totalCollectedFines ?? 0) - totalCollectedDeduct
-            ),
-            updatedAt: now,
-          });
-        }
-      }
-
-      // 4. Batch-fetch clearanceStatus & proofOfPayments in chunks of 30 userIds
-      const userIdList = Array.from(affectedUserIds);
-      const clearanceDocs: ClearanceStatus[] = [];
-      const proofDocs: ProofOfPayment[] = [];
-
-      for (let i = 0; i < userIdList.length; i += 30) {
-        const chunk = userIdList.slice(i, i + 30);
-        const [cSnap, pSnap] = await Promise.all([
-          getDocs(
-            query(
-              collection(db, "clearanceStatus"),
-              where("userId", "in", chunk)
-            )
-          ),
-          getDocs(
-            query(
-              collection(db, "proofOfPayments"),
-              where("userId", "in", chunk)
-            )
-          ),
-        ]);
-
-        cSnap.docs.forEach((d) => {
-          const data = d.data();
-          if (!currentEvent.orgId || data.orgId === currentEvent.orgId) {
-            clearanceDocs.push({ id: d.id, ...data } as ClearanceStatus);
-          }
-        });
-        pSnap.docs.forEach((d) => {
-          const data = d.data();
-          if (!currentEvent.orgId || data.orgId === currentEvent.orgId) {
-            proofDocs.push({ id: d.id, ...data } as ProofOfPayment);
-          }
-        });
-      }
-
-      // Remove deleted event's fineItems from clearance blockingItems and recompute clearance status
-      for (const clearance of clearanceDocs) {
-        const currentBlocking = { ...(clearance.blockingItems ?? {}) } as Record<
-          string,
-          any
-        >;
-        const matchedIds = Object.keys(currentBlocking).filter((key) =>
-          allRemovedItemIds.has(key)
-        );
-        if (matchedIds.length === 0) continue;
-
-        const updatePayload: Record<string, any> = { updatedAt: now };
-        for (const id of matchedIds) {
-          delete currentBlocking[id];
-          updatePayload[`blockingItems.${id}`] = deleteField();
-        }
-        const nextClearanceStatus =
-          deriveClearanceStatusFromBlockingItems(currentBlocking);
-        updatePayload.status = nextClearanceStatus;
-        updatePayload.clearanceDate =
-          nextClearanceStatus === "cleared" ? now : null;
-
-        batch.update(doc(db, "clearanceStatus", clearance.id), updatePayload);
-        operationCount++;
-        if (operationCount === 450) flushBatch();
-      }
-
-      // Move removed fineItems to metadata.refundables on any matching proofOfPayments
-      for (const proof of proofDocs) {
-        const items = proof.metadata?.items ?? [];
-        const matchingItems = items.filter((i) => allRemovedItemIds.has(i.refId));
-        if (matchingItems.length === 0) continue;
-
-        const paymentRef = doc(db, "proofOfPayments", proof.id!);
-        const archiveProof = items.length === matchingItems.length;
-        batch.update(paymentRef, {
-          "metadata.items": arrayRemove(...matchingItems),
-          "metadata.refundables": arrayUnion(...matchingItems),
-          ...(archiveProof ? { isArchived: true } : {}),
-        });
-        operationCount++;
-        if (operationCount === 450) flushBatch();
-      }
-
-      flushBatch();
-      await Promise.all(batchPromises);
+      invalidateEventDeletionCaches(eventId);
+    } catch (innerError) {
+      await updateDoc(eventDocRef, {
+        deletionStatus: "failed",
+        deletionHeartbeatAt: Timestamp.now(),
+      }).catch(() => {});
+      throw innerError;
     }
-
-    // 5. Mark the event as soft-deleted only AFTER all fine/clearance/stats cleanups succeed
-    await updateDoc(eventDocRef, { isDeleted: true });
-
-    // Invalidate specific event cache and all paginated events, fines, and clearances
-    cacheService.invalidate(`event:${eventId}`);
-    cacheService.invalidateByPrefix("events:");
-    cacheService.invalidateByPrefix("ui:events:view:");
-    cacheService.invalidateByPrefix("fines:");
-    cacheService.invalidateByPrefix("clearance:");
   } catch (error) {
     handleFirestoreError(error, `delete event with ID ${eventId}`);
   }

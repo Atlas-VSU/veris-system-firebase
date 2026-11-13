@@ -125,6 +125,15 @@ export function deriveClearanceStatusFromBlockingItems(
     : "not_cleared";
 }
 
+export function buildFineId(
+  userId: string,
+  orgId: string,
+  term: { AY: string; semester: string }
+): string {
+  const raw = `${userId}_${orgId}_${term.AY}-${term.semester}`;
+  return raw.replace(/[/\s]/g, "_");
+}
+
 export function buildInitialStudentFineDoc({
   id,
   orgId,

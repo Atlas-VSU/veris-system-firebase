@@ -2,7 +2,6 @@ import { db } from "@/firebase/firebase.config";
 import { getAllUsers, getCurrentUserData, getUserById } from "@/firebase/users";
 import {
   collection,
-  addDoc,
   writeBatch,
   doc,
   CollectionReference,
@@ -46,6 +45,7 @@ import {
 import {
   buildEventFineItemPayload,
   buildFineBlockingItemEntry,
+  buildFineId,
   buildInitialStudentFineDoc,
   deriveClearanceStatusFromBlockingItems,
   determineFineStatus,
@@ -83,25 +83,120 @@ const invalidateFinesGenerationCaches = (eventId: string) => {
   cacheService.invalidateByPrefix("attendees-all-events");
 };
 
+// ── Timeout wrapper ───────────────────────────────────────────────────────
+const withTimeout = async <T>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`Timeout after ${ms}ms — ${label}`)), ms);
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+};
+
+interface ParentFineSeedInput {
+  orgId: string;
+  userId: string;
+  studentId: string;
+  userName: string;
+  academicYear: string;
+  semester: string;
+}
+
+/**
+ * Atomically resolves or creates parent `fines` documents inside bounded Firestore
+ * transactions using deterministic IDs so concurrent writers never produce duplicates
+ * or overwrite existing balances.
+ */
+const ensureParentFineDocsInTx = async (
+  students: ParentFineSeedInput[],
+  term: { AY: string; semester: string },
+  orgId: string
+): Promise<StudentFines[]> => {
+  if (students.length === 0) return [];
+  const CREATE_TX_SIZE = 100;
+  const resolved: StudentFines[] = [];
+
+  for (let i = 0; i < students.length; i += CREATE_TX_SIZE) {
+    const slice = students.slice(i, i + CREATE_TX_SIZE);
+    const txDocs = await withTimeout(
+      runTransaction(db, async (transaction) => {
+        const refs = slice.map((s) =>
+          doc(finesCollection, buildFineId(s.userId, orgId, term))
+        );
+        const snaps = await Promise.all(refs.map((ref) => transaction.get(ref)));
+        const now = Timestamp.now();
+        const chunkResults: StudentFines[] = [];
+
+        for (let idx = 0; idx < slice.length; idx++) {
+          const student = slice[idx];
+          const snap = snaps[idx];
+
+          if (snap.exists() && snap.data()?.metadata?.isArchived !== true) {
+            chunkResults.push({ id: snap.id, ...snap.data() } as StudentFines);
+            continue;
+          }
+
+          // Fall back to a fresh ID only if the deterministic doc was previously archived
+          const targetRef = snap.exists() ? doc(finesCollection) : refs[idx];
+          const fineData = buildInitialStudentFineDoc({
+            id: targetRef.id,
+            orgId: student.orgId,
+            userId: student.userId,
+            studentId: student.studentId,
+            userName: student.userName,
+            academicYear: student.academicYear,
+            semester: student.semester,
+            now,
+          }) as StudentFines;
+
+          transaction.set(targetRef, fineData);
+          chunkResults.push(fineData);
+        }
+
+        return chunkResults;
+      }),
+      25_000,
+      "creating missing parent fine records"
+    );
+
+    resolved.push(...txDocs);
+  }
+
+  return resolved;
+};
+
 export const createFinePerStudent = async (userId: string, user: Member) => {
   try {
     const currentUser = await getCurrentUserData();
-    if (!currentUser) {
+    if (!currentUser || !currentUser.orgId) {
       console.error("No authenticated user found.");
       return null;
     }
     const term = await getActiveTerm();
-    const now = Timestamp.now();
-    const fineData = buildInitialStudentFineDoc({
-      orgId: currentUser.orgId,
-      userId,
-      studentId: user.studentId,
-      userName: `${user ? user.firstName : "Unknown"} ${user ? user.lastName : ""}`,
-      academicYear: term!.AY,
-      semester: term!.semester,
-      now,
-    });
-    await addDoc(finesCollection, fineData);
+    if (!term) {
+      console.error("No active term found.");
+      return null;
+    }
+
+    await ensureParentFineDocsInTx(
+      [
+        {
+          orgId: currentUser.orgId,
+          userId,
+          studentId: user.studentId,
+          userName: `${user ? user.firstName : "Unknown"} ${user ? user.lastName : ""}`,
+          academicYear: term.AY,
+          semester: term.semester,
+        },
+      ],
+      term,
+      currentUser.orgId
+    );
     await recalculateClearanceStatus(userId);
   } catch (error) {
     handleFirestoreError(error, `creating fine document on ID ${userId}`);
@@ -176,31 +271,25 @@ export const createBulkFines = async (
     for (let i = 0; i < users.length; i += batchSize) {
       const batchNum = Math.floor(i / batchSize) + 1;
       const batchSlice = users.slice(i, i + batchSize);
-      const batch = writeBatch(db);
-      const now = Timestamp.now();
+      const seedInputs: ParentFineSeedInput[] = [];
 
       for (const user of batchSlice) {
         if (!user.member) {
           console.warn(`User ${user.id} has no member data — skipping.`);
           continue;
         }
-
-        const fineDocRef = doc(finesCollection);
-        const fineData = buildInitialStudentFineDoc({
+        seedInputs.push({
           orgId: currentUser.orgId!,
           userId: user.id,
           userName: `${user.member.firstName} ${user.member.lastName}`,
           studentId: user.member.studentId,
           academicYear: term!.AY,
           semester: term!.semester,
-          now,
         });
-
-        batch.set(fineDocRef, fineData);
       }
 
       try {
-        await batch.commit();
+        await ensureParentFineDocsInTx(seedInputs, term!, currentUser.orgId!);
       } catch (batchError) {
         result.failedAtBatch = batchNum;
         handleFirestoreError(batchError, `batch ${batchNum}/${totalBatches}`);
@@ -230,21 +319,6 @@ export const createBulkFines = async (
   }
 };
 
-// ── Timeout wrapper ───────────────────────────────────────────────────────
-const withTimeout = async <T>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    return await Promise.race([
-      promise,
-      new Promise<T>((_, reject) => {
-        timer = setTimeout(() => reject(new Error(`Timeout after ${ms}ms — ${label}`)), ms);
-      }),
-    ]);
-  } finally {
-    if (timer !== undefined) clearTimeout(timer);
-  }
-};
-
 function makeSnapshot(
   phase: FineGenerationPhase,
   counts: {
@@ -267,7 +341,8 @@ function makeSnapshot(
 
 /**
  * Gets or creates a parent `fines` document for each student using server-fresh lookups.
- * Always skips localStorage cache to avoid creating duplicate parent docs or overwriting counts.
+ * Uses deterministic parent IDs inside transactions to prevent duplicate parent docs
+ * across concurrent fine-generation runs while remaining compatible with legacy random IDs.
  */
 const getOrCreateFinesForStudents = async (
   students: MemberData[],
@@ -276,7 +351,7 @@ const getOrCreateFinesForStudents = async (
 ): Promise<StudentFines[]> => {
   if (students.length === 0) return [];
 
-  // 1. Always fetch server-fresh existing parent docs for this org + term
+  // 1. Always fetch server-fresh existing parent docs for this org + term (covers legacy random IDs)
   const existing = await getFinesByStudentsFromServer(students, orgId, term);
   const existingMap = new Map<string, StudentFines>();
   for (const fine of existing) {
@@ -297,34 +372,22 @@ const getOrCreateFinesForStudents = async (
   }
   const missing = Array.from(missingByStudentId.values());
 
-  // 3. Create missing parent docs in bounded batches (< 500 write limit)
+  // 3. Atomically create or resolve missing parent docs using deterministic IDs
   if (missing.length > 0) {
-    const CREATE_BATCH_SIZE = 200;
-    const now = Timestamp.now();
+    const seedInputs: ParentFineSeedInput[] = missing.map((student) => ({
+      orgId,
+      userId: student.id!,
+      studentId: student.member.studentId,
+      userName: `${student.member.firstName} ${student.member.lastName}`,
+      academicYear: term.AY,
+      semester: term.semester,
+    }));
 
-    for (let i = 0; i < missing.length; i += CREATE_BATCH_SIZE) {
-      const slice = missing.slice(i, i + CREATE_BATCH_SIZE);
-      const batch = writeBatch(db);
-      const newDocs: StudentFines[] = [];
-
-      for (const student of slice) {
-        const fineDocRef = doc(finesCollection);
-        const fineData = buildInitialStudentFineDoc({
-          id: fineDocRef.id,
-          orgId,
-          userId: student.id!,
-          studentId: student.member.studentId,
-          userName: `${student.member.firstName} ${student.member.lastName}`,
-          academicYear: term.AY,
-          semester: term.semester,
-          now,
-        }) as StudentFines;
-        batch.set(fineDocRef, fineData);
-        newDocs.push(fineData);
+    const createdOrResolved = await ensureParentFineDocsInTx(seedInputs, term, orgId);
+    for (const d of createdOrResolved) {
+      if (d.studentId) {
+        existingMap.set(d.studentId, pickCanonicalFineDoc(existingMap.get(d.studentId), d));
       }
-
-      await withTimeout(batch.commit(), 25_000, "creating missing parent fine records");
-      for (const d of newDocs) existingMap.set(d.studentId, d);
     }
 
     cacheService.invalidateByPrefix("fines:");
@@ -474,6 +537,16 @@ export const generateFinesOnEvent = async (
           const data = eventSnap.data();
           if (data.isDeleted === true) {
             throw new Error("Cannot issue fines for a deleted event.");
+          }
+          const deletionHeartbeatMs = timestampToMillis(data.deletionHeartbeatAt);
+          if (
+            data.deletionStatus === "deleting" &&
+            deletionHeartbeatMs !== null &&
+            Date.now() - deletionHeartbeatMs < LOCK_LEASE_MS
+          ) {
+            throw new Error(
+              "Cannot issue fines while this event is being deleted."
+            );
           }
           if (data.finesGenerated === true) {
             throw new Error("Fines have already been generated for this event.");
@@ -689,6 +762,17 @@ export const generateFinesOnEvent = async (
             throw new Error("Event was removed during fine generation.");
           }
           const eventDocData = eventSnap.data();
+          if (eventDocData.isDeleted === true) {
+            throw new Error("Event was deleted during fine generation.");
+          }
+          const deletionHeartbeatMs = timestampToMillis(eventDocData.deletionHeartbeatAt);
+          if (
+            eventDocData.deletionStatus === "deleting" &&
+            deletionHeartbeatMs !== null &&
+            Date.now() - deletionHeartbeatMs < LOCK_LEASE_MS
+          ) {
+            throw new Error("Event deletion started during fine generation. Stopping.");
+          }
           if (eventDocData.fineGenerationLockId !== lockId) {
             throw new Error(
               "Another fine generation session claimed this event. Stopping to avoid duplicates."

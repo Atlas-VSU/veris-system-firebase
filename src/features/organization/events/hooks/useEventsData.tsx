@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Event } from "../types";
 import { getPaginatedEvents, getEvents } from "@/firebase";
 import { EventStatus } from "../types";
+import type { ViewMode } from "../components/ViewToggle";
 import { cacheService, CACHE_DURATIONS } from "@/services/cacheService";
 import { useTermPeriod } from "../../term/hooks/useTermPeriod";
 
@@ -10,11 +11,11 @@ interface SortOptions {
   direction: "asc" | "desc";
 }
 
-export function useEventsData(currentTab: EventStatus) {
+export function useEventsData(currentTab: EventStatus, viewMode: ViewMode = "card") {
   const [events, setEvents] = useState<Event[]>([]);
   const [totalEvents, setTotalEvents] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
+  const itemsPerPage = viewMode === "list" ? 5 : 6;
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
@@ -81,8 +82,8 @@ export function useEventsData(currentTab: EventStatus) {
       : "no-search";
     return `ui:events:view:${currentTab}:${sortOptions.field}-${
       sortOptions.direction
-    }:page${currentPage}:date${dateStr}:${searchKey}:term${selected?.AY}-${selected?.semester}`;
-  }, [currentTab, sortOptions, currentPage, filterDate, searchQuery, selected]);
+    }:page${currentPage}:limit${itemsPerPage}:date${dateStr}:${searchKey}:term${selected?.AY}-${selected?.semester}`;
+  }, [currentTab, sortOptions, currentPage, itemsPerPage, filterDate, searchQuery, selected]);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);

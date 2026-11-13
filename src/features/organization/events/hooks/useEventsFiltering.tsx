@@ -10,7 +10,7 @@ export function useEventsFiltering(
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [sortBy, setSortBy] = useState<string>("date-desc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
+  const [itemsPerPage] = useState(6);
 
   // Filter events based on search query and date
   const filteredEvents = useMemo(() => {

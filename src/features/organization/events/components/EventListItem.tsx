@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  AlertTriangle,
   CalendarIcon,
   ClockIcon,
   MapPinIcon,
@@ -23,9 +24,12 @@ import {
 } from "lucide-react"
 import type { Event } from "../types"
 import { formatDate } from "@/utils/useGeneralUtils"
-import { cn } from "@/lib/utils"
 import { useTermPeriod } from "../../term/hooks/useTermPeriod"
 import { useSubscriptionTier } from "../hooks/useSubscriptionTier"
+import {
+  isFineGenerationInProgress,
+  isFineGenerationInterrupted,
+} from "@/utils/eventStatusUtils"
 
 interface EventListItemProps {
   event: Event
@@ -111,6 +115,10 @@ export function EventListItem({
   const hasTimeIn = timeInStart && timeInEnd
   const hasTimeOut = timeOutStart && timeOutEnd
 
+  const fineGenInProgress = isFineGenerationInProgress(event)
+  const fineGenInterrupted = isFineGenerationInterrupted(event)
+  const actionLocked = opLoading || fineGenInProgress
+
   const handleArchive = async () => {
     setOpLoading(true)
     try {
@@ -148,6 +156,11 @@ export function EventListItem({
     setTimeout(() => setLogAttendanceLoading(false), 500)
   }
 
+  const showLogAttendance =
+    (event.status === "ongoing" || event.status === "completed") &&
+    !event.finesGenerated &&
+    !fineGenInProgress
+
   return (
     <Card className="hover:shadow-md transition-all duration-200 border-border bg-card overflow-hidden">
       <CardContent className="p-0">
@@ -178,6 +191,24 @@ export function EventListItem({
                   >
                     <StarIcon className="h-3 w-3 mr-1 fill-amber-600" />
                     Major
+                  </Badge>
+                )}
+                {fineGenInProgress && (
+                  <Badge
+                    variant="outline"
+                    className="bg-amber-50 text-amber-800 border-amber-300 font-semibold text-xs"
+                  >
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    Generating Fines…
+                  </Badge>
+                )}
+                {fineGenInterrupted && (
+                  <Badge
+                    variant="outline"
+                    className="bg-amber-50 text-amber-800 border-amber-300 font-semibold text-xs"
+                  >
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Issuance Interrupted
                   </Badge>
                 )}
               </div>
@@ -240,7 +271,7 @@ export function EventListItem({
                     <>
                       <DropdownMenuItem
                         onClick={handleUnarchive}
-                        disabled={opLoading}
+                        disabled={actionLocked}
                       >
                         {opLoading ? (
                           <>
@@ -254,7 +285,7 @@ export function EventListItem({
                       <DropdownMenuItem
                         onClick={handleDelete}
                         className="text-destructive"
-                        disabled={opLoading}
+                        disabled={actionLocked}
                       >
                         {opLoading ? (
                           <>
@@ -272,29 +303,38 @@ export function EventListItem({
                         event.status === "completed" && (
                           <DropdownMenuItem
                             onClick={() => onIssueFine(event)}
-                            disabled={opLoading || !selected?.isActive || subscriptionTier === "basic"}
+                            disabled={actionLocked || !selected?.isActive || subscriptionTier === "basic"}
                           >
-                            Issue Fines
+                            {fineGenInProgress ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Generating Fines…
+                              </>
+                            ) : fineGenInterrupted ? (
+                              "Resume Fines"
+                            ) : (
+                              "Issue Fines"
+                            )}
                           </DropdownMenuItem>
                         )}
                       {event.status === "ongoing" && (
                         <DropdownMenuItem
                           onClick={() => onMarkAsCompleted(event)}
-                          disabled={opLoading}
+                          disabled={actionLocked}
                         >
                           Mark as Completed
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem
                         onClick={() => onEdit(event)}
-                        disabled={opLoading}
+                        disabled={actionLocked}
                       >
                         Edit Event
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={handleArchive}
                         className="text-destructive"
-                        disabled={opLoading}
+                        disabled={actionLocked}
                       >
                         {opLoading ? (
                           <>
@@ -315,19 +355,16 @@ export function EventListItem({
 
         {/* Action buttons */}
         {event.status !== "upcoming" && event.status !== "archived" && (
-          <div className={event.finesGenerated ? "grid gap-2 px-5 pb-4" : "flex flex-col sm:flex-row gap-2 px-5 pb-4"}>
+          <div className={showLogAttendance ? "flex flex-col sm:flex-row gap-2 px-5 pb-4" : "grid gap-2 px-5 pb-4"}>
             <Button
               asChild
               variant="outline"
               size="sm"
-              className={event.finesGenerated ? "justify-center gap-1.5 text-xs w-full font-semibold h-9 px-3" : "justify-center gap-1.5 text-xs w-full tablet:w-[50%] md:w-[50%] font-semibold h-9 px-3"}
+              className={showLogAttendance ? "justify-center gap-1.5 text-xs w-full tablet:w-[50%] md:w-[50%] font-semibold h-9 px-3" : "justify-center gap-1.5 text-xs w-full font-semibold h-9 px-3"}
               onClick={handleViewAttendees}
               disabled={viewAttendeesLoading}
             >
-              <Link
-                href={`/org-events/${event.id}/attendees`}
-                
-              >
+              <Link href={`/org-events/${event.id}/attendees`}>
                 {viewAttendeesLoading ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -342,7 +379,7 @@ export function EventListItem({
               </Link>
             </Button>
 
-            {((event.status === "ongoing" || event.status === "completed") && !event.finesGenerated) && (
+            {showLogAttendance && (
               <Button
                 asChild
                 variant="default"

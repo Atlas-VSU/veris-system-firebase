@@ -1,8 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Event } from "../../events/types";
-import { UserPlus, Upload, Loader2, Zap } from "lucide-react";
+import { UserPlus, Upload, Loader2, Zap, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useTermPeriod } from "../../term/hooks/useTermPeriod";
+import {
+  isFineGenerationInProgress,
+  isFineGenerationInterrupted,
+} from "@/utils/eventStatusUtils";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -22,8 +26,17 @@ export function AttendeesHeader({
   isGenerating = false,
 }: AttendeesHeaderProps) {
 
-  const { selected } = useTermPeriod()
-  
+  const { selected } = useTermPeriod();
+
+  const fineGenInProgress = isFineGenerationInProgress(event);
+  const fineGenInterrupted = isFineGenerationInterrupted(event);
+
+  const disabledReason = fineGenInProgress
+    ? "Fine generation is already running for this event"
+    : !selected?.isActive
+      ? "Fine generation is disabled for inactive academic terms"
+      : null;
+
   return (
     <div className="bg-[#FEFEFA] border border-border/50 rounded-3xl p-6 shadow-soft transition-all duration-300">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -44,19 +57,21 @@ export function AttendeesHeader({
 
         {/* Right: action buttons */}
         <div className={event.finesGenerated ? "flex flex-col sm:flex-col gap-2" : "flex flex-col sm:flex-row gap-2"}>
-          {(event.status === "ongoing" || event.status === "completed") && !event.finesGenerated && (
-            <Button
-              asChild
-              className="justify-center gap-1.5"
-            >
-              <Link href={`/org-events/${event.id}/log-attendance`}>
-                <UserPlus className="h-4 w-4 mr-2" />
-                {event.status === "completed"
-                  ? "Log Special Attendance"
-                  : "Log Attendance"}
-              </Link>
-            </Button>
-          )}
+          {(event.status === "ongoing" || event.status === "completed") &&
+            !event.finesGenerated &&
+            !fineGenInProgress && (
+              <Button
+                asChild
+                className="justify-center gap-1.5"
+              >
+                <Link href={`/org-events/${event.id}/log-attendance`}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  {event.status === "completed"
+                    ? "Log Special Attendance"
+                    : "Log Attendance"}
+                </Link>
+              </Button>
+            )}
 
           {event.status === "completed" && !event.finesGenerated && (
             <TooltipProvider>
@@ -66,16 +81,30 @@ export function AttendeesHeader({
                     <Button
                       variant="outline"
                       onClick={onGenerateFines}
-                      disabled={isGenerating || !selected?.isActive}
+                      disabled={isGenerating || Boolean(disabledReason)}
                     >
-                      <Zap className="size-4 mr-1 text-primary" />
-                      Generate Fines
+                      {isGenerating || fineGenInProgress ? (
+                        <>
+                          <Loader2 className="size-4 mr-1 animate-spin text-primary" />
+                          Generating Fines...
+                        </>
+                      ) : fineGenInterrupted ? (
+                        <>
+                          <RotateCcw className="size-4 mr-1 text-primary" />
+                          Resume Fines
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="size-4 mr-1 text-primary" />
+                          Generate Fines
+                        </>
+                      )}
                     </Button>
                   </span>
                 </TooltipTrigger>
-                {!selected?.isActive && (
+                {disabledReason && (
                   <TooltipContent>
-                    <p>Fine generation is disabled for inactive academic terms</p>
+                    <p>{disabledReason}</p>
                   </TooltipContent>
                 )}
               </Tooltip>

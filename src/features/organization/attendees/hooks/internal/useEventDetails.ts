@@ -21,6 +21,7 @@ export const useEventDetails = (eventId: string) => {
 
         if (forceRefresh) {
           // Skip cache on force refresh
+          cacheService.invalidate(cacheKey);
           event = (await getEventById(eventId)) as Event;
           cacheService.set(cacheKey, event, CACHE_DURATIONS.EVENTS);
         } else {

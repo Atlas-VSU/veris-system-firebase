@@ -3,6 +3,7 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDocsFromServer,
   Timestamp,
   doc,
   updateDoc,
@@ -10,16 +11,19 @@ import {
   where,
   writeBatch,
   getDoc,
+  getDocFromServer,
+  runTransaction,
   orderBy,
   QueryDocumentSnapshot,
   DocumentData,
+  DocumentReference,
   getCountFromServer,
   increment,
   collectionGroup,
-  limit,
   deleteField,
   arrayRemove,
   arrayUnion,
+  documentId,
 } from "firebase/firestore";
 import { db } from "./firebase.config";
 import { EventFormData } from "@/lib/validators";
@@ -27,20 +31,22 @@ import { Event } from "@/features/organization/events/types";
 import {
   determineEventStatus,
   getEventsNeedingStatusUpdate,
+  isFineGenerationInProgress,
 } from "@/utils/eventStatusUtils";
 import { getCurrentUserData } from "./users";
-// import { getAuth } from "firebase/auth";
 import { Member } from "@/features/organization/members/types";
 import { cacheService, CACHE_DURATIONS } from "@/services/cacheService";
 import { getOrgById } from "./organization";
 import { getActiveTerm } from "./term";
-import { recalculateFines } from "./fines/update/recalculate";
-import { FineItem, ProofOfPayment } from "@/features/organization/fines/types";
-import { Fine } from "@/features/organization/payments/types";
-import { updateFineStats } from "./stats/update/updateStats";
+import { FineItem, ProofOfPayment, StudentFines } from "@/features/organization/fines/types";
 import { ClearanceStatus } from "@/features/organization/clearance/types";
-import { getProofOfPaymentByUserId } from "./payment/read/proofOfPayment";
-import { recalculateClearanceStatus } from "./clearance";
+import { FineStatus } from "@/constants/status";
+import {
+  deriveClearanceStatusFromBlockingItems,
+  determineFineStatus,
+  isActiveFineItem,
+} from "@/features/organization/fines/utils/fineComputations";
+import { applyFineStatsDeltaInTx } from "./stats/update/updateStats";
 
 const eventsCollection = collection(db, "events");
 
@@ -81,7 +87,7 @@ export const getPaginatedEvents = async (
   status?: "ongoing" | "upcoming" | "completed" | "archived" | "all",
   sortField: string = "date",
   sortDirection: "asc" | "desc" = "desc",
-  pageSize: number = 5,
+  pageSize: number = 6,
   startAfterDoc?: QueryDocumentSnapshot<DocumentData> | null,
   searchQuery?: string,
   skip: number = 0,
@@ -89,7 +95,7 @@ export const getPaginatedEvents = async (
   selectedTerm?: { AY: string; semester: string } | null
 ): Promise<PaginatedEvents> => {
   try {
-    const term = selectedTerm || await getActiveTerm();
+    const term = selectedTerm || (await getActiveTerm());
     // Create a cache key based on the query parameters
     const datePart = filterDate
       ? filterDate.toISOString().split("T")[0]
@@ -123,29 +129,33 @@ export const getPaginatedEvents = async (
 
         // Apply filters based on levelAccess
         if (levelAccess === 1 && org?.programId) {
-          baseQuery = query(baseQuery, where("accessLevelEvent", "==", 1), where("programId", "==", org.programId));
+          baseQuery = query(
+            baseQuery,
+            where("accessLevelEvent", "==", 1),
+            where("programId", "==", org.programId)
+          );
         } else if (levelAccess === 2 && org?.facultyId) {
-          baseQuery = query(baseQuery, where("accessLevelEvent", "==", 2), where("facultyId", "==", org.facultyId));
+          baseQuery = query(
+            baseQuery,
+            where("accessLevelEvent", "==", 2),
+            where("facultyId", "==", org.facultyId)
+          );
         } else if (levelAccess === 3) {
           baseQuery = query(baseQuery, where("accessLevelEvent", "==", 3));
         }
 
-        // // Add status filter if provided and not "all"
+        // Add status filter if provided and not "all"
         if (status && status !== "all") {
           baseQuery = query(baseQuery, where("status", "==", status));
         }
 
         // Add date filter if provided
-        // In Firestore, we need to filter by a specific day range
         if (filterDate) {
-          // Start of the day
           const startDate = new Date(filterDate);
           startDate.setHours(0, 0, 0, 0);
 
-          // End of the day
           const endDate = new Date(filterDate);
           endDate.setHours(23, 59, 59, 999);
-          // Add date range filter
           baseQuery = query(
             baseQuery,
             where("date", ">=", Timestamp.fromDate(startDate)),
@@ -163,8 +173,6 @@ export const getPaginatedEvents = async (
           orderBy(sortFieldPath, sortDirection)
         );
 
-        // Get total count for pagination - this is an expensive operation
-        // so we'll cache it separately with a longer TTL
         const countCacheKey = `events:count:${status}:${levelAccess}-${org.facultyId || org.programId || "all"}:${datePart}`;
 
         const totalCount = await cacheService.getOrFetch<number>(
@@ -173,10 +181,9 @@ export const getPaginatedEvents = async (
             const countSnapshot = await getCountFromServer(sortedQuery);
             return countSnapshot.data().count;
           },
-          CACHE_DURATIONS.EVENTS * 2 // Cache counts for longer
+          CACHE_DURATIONS.EVENTS * 2
         );
 
-        // If there are no events, return early
         if (totalCount === 0) {
           return {
             events: [],
@@ -186,26 +193,19 @@ export const getPaginatedEvents = async (
           };
         }
 
-        // Execute query - get all results for this query
         const snapshot = await getDocs(sortedQuery);
         const allEvents = snapshot.docs.map(transformEventData);
 
-        // Manual pagination using skip and limit
         const events = allEvents.slice(skip, skip + pageSize);
 
-        // Check if any events need status updates
         const eventsToUpdate = getEventsNeedingStatusUpdate(events);
         if (eventsToUpdate.length > 0) {
           await updateEventStatuses(eventsToUpdate);
 
-          // If we're filtering by status, we need to refresh the data
-          // to make sure we get accurate results
           if (status && status !== "all") {
-            // Invalidate relevant caches
             cacheService.invalidateByPrefix(`events:paginated:${status}`);
             cacheService.invalidate(countCacheKey);
 
-            // Recursive call to get fresh data
             return getPaginatedEvents(
               status,
               sortField,
@@ -218,7 +218,6 @@ export const getPaginatedEvents = async (
               selectedTerm
             );
           } else {
-            // Keep in-memory slice up-to-date with new statuses
             events.forEach((ev) => {
               const updated = eventsToUpdate.find((u) => u.id === ev.id);
               if (updated) {
@@ -231,11 +230,11 @@ export const getPaginatedEvents = async (
         return {
           events,
           totalCount,
-          lastDoc: null, // We're not using cursor pagination anymore
+          lastDoc: null,
           hasMore: skip + pageSize < totalCount,
         };
       },
-      CACHE_DURATIONS.EVENTS // Cache for 15 minutes by default
+      CACHE_DURATIONS.EVENTS
     );
   } catch (error) {
     handleFirestoreError(error, "fetch paginated events");
@@ -250,7 +249,6 @@ export const getPaginatedEvents = async (
 
 export const addEvent = async (eventData: EventFormData) => {
   try {
-    // Get the current user's faculty ID
     const currentUser = (await getCurrentUserData()) as unknown as Member;
     const org = await getOrgById(currentUser.orgId!);
     const term = await getActiveTerm();
@@ -268,19 +266,16 @@ export const addEvent = async (eventData: EventFormData) => {
       return [];
     }
 
-    // Validate that the event date is not in the past
     const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0); // Set to start of day for comparison
+    currentDate.setHours(0, 0, 0, 0);
 
     const eventDate = new Date(eventData.date);
-    eventDate.setHours(0, 0, 0, 0); // Set to start of day for comparison
+    eventDate.setHours(0, 0, 0, 0);
 
     if (eventDate < currentDate) {
       throw new Error("Cannot create an event with a date in the past");
     }
 
-    // Validate time ranges
-    // 1. Time In Start should be before Time In End
     if (eventData.timeInStart && eventData.timeInEnd) {
       if (eventData.timeInStart >= eventData.timeInEnd) {
         throw new Error("Time In Start must be earlier than Time In End");
@@ -288,22 +283,16 @@ export const addEvent = async (eventData: EventFormData) => {
     }
 
     if (eventData.timeOutStart && eventData.timeOutEnd) {
-      // 2. Time Out Start should be before Time Out End
-      if (eventData.timeOutStart && eventData.timeOutEnd) {
-        if (eventData.timeOutStart >= eventData.timeOutEnd) {
-          throw new Error("Time Out Start must be earlier than Time Out End");
-        }
+      if (eventData.timeOutStart >= eventData.timeOutEnd) {
+        throw new Error("Time Out Start must be earlier than Time Out End");
       }
     }
 
-    if(eventData.timeInEnd && eventData.timeOutStart){
-      // 3. Time In End should be before Time Out Start (Time In period should complete before Time Out begins)
-      if (eventData.timeInEnd && eventData.timeOutStart) {
-        if (eventData.timeInEnd > eventData.timeOutStart) {
-          throw new Error(
-            "Time In period must complete before Time Out period begins"
-          );
-        }
+    if (eventData.timeInEnd && eventData.timeOutStart) {
+      if (eventData.timeInEnd > eventData.timeOutStart) {
+        throw new Error(
+          "Time In period must complete before Time Out period begins"
+        );
       }
     }
 
@@ -314,7 +303,7 @@ export const addEvent = async (eventData: EventFormData) => {
     } else if (levelAccess === 2 && org?.facultyId) {
       dynamicFields = { facultyId: org.facultyId };
     }
-    
+
     const status = determineEventStatus(eventData.date);
     const docRef = await addDoc(eventsCollection, {
       ...eventData,
@@ -328,7 +317,8 @@ export const addEvent = async (eventData: EventFormData) => {
       attendees: 0,
       status,
       isDeleted: false,
-      finesGenerated: false,  
+      finesGenerated: false,
+      fineGenerationStatus: "idle",
       accessLevelEvent: levelAccess,
       manuallyCompleted: false,
       orgId: currentUser.orgId,
@@ -337,7 +327,6 @@ export const addEvent = async (eventData: EventFormData) => {
       ...dynamicFields,
     });
 
-    // Invalidate all event caches after adding a new event
     cacheService.invalidateByPrefix("events:");
     cacheService.invalidateByPrefix("ui:events:view:");
 
@@ -352,8 +341,6 @@ export const updateEvent = async (
   eventData: EventFormData
 ) => {
   try {
-    // Validate time ranges (same validations as addEvent)
-    // 1. Time In Start should be before Time In End
     if (eventData.timeInStart && eventData.timeInEnd) {
       if (eventData.timeInStart >= eventData.timeInEnd) {
         throw new Error("Time In Start must be earlier than Time In End");
@@ -361,25 +348,18 @@ export const updateEvent = async (
     }
 
     if (eventData.timeOutStart && eventData.timeOutEnd) {
-      // 2. Time Out Start should be before Time Out End
-      if (eventData.timeOutStart && eventData.timeOutEnd) {
-        if (eventData.timeOutStart >= eventData.timeOutEnd) {
-          throw new Error("Time Out Start must be earlier than Time Out End");
-        }
+      if (eventData.timeOutStart >= eventData.timeOutEnd) {
+        throw new Error("Time Out Start must be earlier than Time Out End");
       }
     }
-    if(eventData.timeInEnd && eventData.timeOutStart){
-    // 3. Time In End should be before Time Out Start (Time In period should complete before Time Out begins)
-      if (eventData.timeInEnd && eventData.timeOutStart) {
-        if (eventData.timeInEnd > eventData.timeOutStart) {
-          throw new Error(
-            "Time In period must complete before Time Out period begins"
-          );
-        }
+    if (eventData.timeInEnd && eventData.timeOutStart) {
+      if (eventData.timeInEnd > eventData.timeOutStart) {
+        throw new Error(
+          "Time In period must complete before Time Out period begins"
+        );
       }
     }
 
-    // Get current event to check if it belongs to the faculty and if it's archived
     const currentEvent = await getEventById(eventId);
     if (!currentEvent) {
       throw new Error(
@@ -389,8 +369,6 @@ export const updateEvent = async (
 
     const eventDoc = doc(db, "events", eventId);
 
-    // If event is archived, maintain archived status
-    // Otherwise, determine status based on date
     const status =
       currentEvent?.status === "archived"
         ? "archived"
@@ -404,10 +382,9 @@ export const updateEvent = async (
       timeOutStart: eventData.timeOutStart || null,
       timeOutEnd: eventData.timeOutEnd || null,
       date: Timestamp.fromDate(eventData.date),
-      status, // Set status automatically based on date
+      status,
     });
 
-    // Invalidate specific event cache and all paginated events
     cacheService.invalidate(`event:${eventId}`);
     cacheService.invalidateByPrefix("events:");
     cacheService.invalidateByPrefix("ui:events:view:");
@@ -416,14 +393,14 @@ export const updateEvent = async (
   }
 };
 
-
 export const disableFineGeneration = async (eventId: string) => {
   try {
     const eventDoc = doc(db, "events", eventId);
     await updateDoc(eventDoc, {
       finesGenerated: true,
+      fineGenerationStatus: "completed",
+      fineGenerationLockId: null,
     });
-    // Invalidate specific event cache and any paginated events
     cacheService.invalidate(`event:${eventId}`);
     cacheService.invalidateByPrefix("events:");
     cacheService.invalidateByPrefix("ui:events:view:");
@@ -433,7 +410,7 @@ export const disableFineGeneration = async (eventId: string) => {
       `disable fine generation for event with ID ${eventId}`
     );
   }
- }
+};
 
 export const incrementEventAttendees = async (eventId: string) => {
   try {
@@ -442,7 +419,6 @@ export const incrementEventAttendees = async (eventId: string) => {
       attendees: increment(1),
     });
 
-    // Invalidate specific event cache and any paginated events
     cacheService.invalidate(`event:${eventId}`);
     cacheService.invalidateByPrefix("events:");
     cacheService.invalidateByPrefix("ui:events:view:");
@@ -462,11 +438,9 @@ export const updateEventStatuses = async (
     let updatesApplied = false;
 
     events.forEach((event) => {
-      // Skip archived events - they stay archived
       if (event.status === "archived") return;
-      if (event.manuallyCompleted) return; // Skip events manually marked as completed
+      if (event.manuallyCompleted) return;
 
-      // Convert ID to string if it's a number
       const eventId =
         typeof event.id === "number" ? String(event.id) : event.id;
       const eventDoc = doc(db, "events", eventId);
@@ -479,11 +453,9 @@ export const updateEventStatuses = async (
       }
     });
 
-    // Only commit if there are actual updates
     if (updatesApplied) {
       await batch.commit();
 
-      // Invalidate all event caches since statuses changed
       cacheService.invalidateByPrefix("events:");
       cacheService.invalidateByPrefix("ui:events:view:");
     }
@@ -503,14 +475,12 @@ export const getEvents = async (
   selectedTerm?: { AY: string; semester: string } | null
 ): Promise<Event[]> => {
   try {
-    const term = selectedTerm || await getActiveTerm();
-    // Create cache key based on status
+    const term = selectedTerm || (await getActiveTerm());
     const cacheKey = `events:all:${status || "all"}:${term?.AY}-${term?.semester}`;
 
     return await cacheService.getOrFetch<Event[]>(
       cacheKey,
       async () => {
-        // Get the current user's faculty ID
         const currentUser = (await getCurrentUserData()) as unknown as Member;
         const org = await getOrgById(currentUser.orgId!);
         if (!currentUser || !org || !term) return [];
@@ -539,16 +509,12 @@ export const getEvents = async (
         const querySnapshot = await getDocs(q);
         const events = querySnapshot.docs.map(transformEventData);
 
-        // Check for events that need status updates
         const eventsToUpdate = getEventsNeedingStatusUpdate(events);
         if (eventsToUpdate.length > 0) {
           const updatesApplied = await updateEventStatuses(eventsToUpdate);
 
-          // If we're filtering by status and updates were applied, refetch to get accurate results
           if (status && updatesApplied) {
-            // Invalidate cache
             cacheService.invalidate(cacheKey);
-
             return getEvents(status, selectedTerm);
           }
         }
@@ -559,20 +525,21 @@ export const getEvents = async (
     );
   } catch (error) {
     handleFirestoreError(error, "fetch events");
-    return []; // Return empty array on error
+    return [];
   }
 };
 
-export const getEventsByStatus = async (status: string, selectedTerm?: { AY: string; semester: string } | null) => {
+export const getEventsByStatus = async (
+  status: string,
+  selectedTerm?: { AY: string; semester: string } | null
+) => {
   try {
-    const term = selectedTerm || await getActiveTerm();
-    // Create cache key based on status
+    const term = selectedTerm || (await getActiveTerm());
     const cacheKey = `events:status:${status}:${term?.AY}-${term?.semester}`;
 
     return await cacheService.getOrFetch<Event[]>(
       cacheKey,
       async () => {
-        // Get the current user's faculty ID
         const currentUser = (await getCurrentUserData()) as unknown as Member;
         const org = await getOrgById(currentUser.orgId!);
         if (!currentUser || !org || !term) return [];
@@ -613,7 +580,6 @@ export const getEventsByStatus = async (status: string, selectedTerm?: { AY: str
 
 export const getEventById = async (eventId: string): Promise<Event | null> => {
   try {
-    // Create cache key for this event
     const cacheKey = `event:${eventId}`;
 
     return await cacheService.getOrFetch<Event | null>(
@@ -640,7 +606,6 @@ export const getEventById = async (eventId: string): Promise<Event | null> => {
 
 export const archiveEvent = async (eventId: string) => {
   try {
-    // Verify the event belongs to the current faculty before archiving
     const currentEvent = await getEventById(eventId);
     if (!currentEvent) {
       throw new Error(
@@ -651,9 +616,6 @@ export const archiveEvent = async (eventId: string) => {
     const eventDoc = doc(db, "events", eventId);
     await updateDoc(eventDoc, { status: "archived" });
 
-
-
-    // Invalidate specific event cache and all paginated events
     cacheService.invalidate(`event:${eventId}`);
     cacheService.invalidateByPrefix("events:");
     cacheService.invalidateByPrefix("ui:events:view:");
@@ -662,206 +624,424 @@ export const archiveEvent = async (eventId: string) => {
   }
 };
 
+const DELETE_TX_CHUNK_SIZE = 25;
+
+const invalidateEventDeletionCaches = (eventId: string) => {
+  cacheService.invalidate(`event:${eventId}`);
+  cacheService.invalidateByPrefix("events:");
+  cacheService.invalidateByPrefix("ui:events:view:");
+  cacheService.invalidateByPrefix("fines:");
+  cacheService.invalidateByPrefix("clearance:");
+};
+
+/**
+ * Atomically archives active fineItems, decrements parent fine totals (including
+ * paidAmount for paid items), and decrements org stats in bounded transactions.
+ * Because each chunk commits all three together, retries never double-deduct or skip stats.
+ */
+const archiveEventFineItemsChunked = async (
+  eventDocRef: DocumentReference,
+  currentEvent: Event,
+  activeItemDocs: QueryDocumentSnapshot<DocumentData>[],
+  now: Timestamp
+) => {
+  const parentItemRefsMap = new Map<string, DocumentReference[]>();
+  const orphanedItemRefs: DocumentReference[] = [];
+
+  for (const itemDoc of activeItemDocs) {
+    const data = itemDoc.data() as FineItem;
+    const parentId = itemDoc.ref.parent.parent?.id || data.parentFineId || "";
+    if (!parentId) {
+      orphanedItemRefs.push(itemDoc.ref);
+      continue;
+    }
+    const refs = parentItemRefsMap.get(parentId) ?? [];
+    refs.push(itemDoc.ref);
+    parentItemRefsMap.set(parentId, refs);
+  }
+
+  const statsId =
+    currentEvent.academicYear && currentEvent.semester && currentEvent.orgId
+      ? `${currentEvent.academicYear}-${currentEvent.semester}-${currentEvent.orgId}`
+      : null;
+  const statsRef = statsId ? doc(db, "stats", statsId) : null;
+
+  const parentEntries = Array.from(parentItemRefsMap.entries());
+  for (let i = 0; i < parentEntries.length; i += DELETE_TX_CHUNK_SIZE) {
+    const chunk = parentEntries.slice(i, i + DELETE_TX_CHUNK_SIZE);
+
+    await runTransaction(db, async (transaction) => {
+      const txEventSnap = await transaction.get(eventDocRef);
+      if (!txEventSnap.exists() || txEventSnap.data()?.isDeleted === true) {
+        return;
+      }
+      const txEventData = transformEventData({
+        id: txEventSnap.id,
+        data: () => txEventSnap.data(),
+      });
+      if (isFineGenerationInProgress(txEventData)) {
+        throw new Error(
+          "Fine generation is running for this event. Deletion stopped."
+        );
+      }
+
+      const statsSnap = statsRef ? await transaction.get(statsRef) : null;
+      const parentReads = await Promise.all(
+        chunk.map(async ([parentId, itemRefs]) => {
+          const fineRef = doc(db, "fines", parentId);
+          const [fineSnap, itemSnaps] = await Promise.all([
+            transaction.get(fineRef),
+            Promise.all(itemRefs.map((ref) => transaction.get(ref))),
+          ]);
+          return { fineRef, fineSnap, itemSnaps };
+        })
+      );
+
+      const txNow = Timestamp.now();
+      let totalFinesDeduct = 0;
+      let totalUnpaidDeduct = 0;
+      let totalCollectedDeduct = 0;
+
+      for (const { fineRef, fineSnap, itemSnaps } of parentReads) {
+        let itemCountDeduct = 0;
+        let accumulatedDeduct = 0;
+        let paidDeduct = 0;
+        let waivedDeduct = 0;
+
+        for (const itemSnap of itemSnaps) {
+          if (!itemSnap.exists()) continue;
+          const itemData = itemSnap.data() as FineItem;
+          if (!isActiveFineItem(itemData as unknown as Record<string, unknown>)) {
+            continue;
+          }
+
+          const amount = Number(itemData.amount ?? 0);
+          const isPaid = Boolean(itemData.isPaid);
+          const isWaived = Boolean(itemData.isWaived);
+
+          itemCountDeduct += 1;
+          if (isWaived) {
+            accumulatedDeduct += amount;
+            waivedDeduct += amount;
+          } else if (isPaid) {
+            accumulatedDeduct += amount;
+            paidDeduct += amount;
+            totalCollectedDeduct += amount;
+            totalFinesDeduct += amount;
+          } else {
+            accumulatedDeduct += amount;
+            totalUnpaidDeduct += amount;
+            totalFinesDeduct += amount;
+          }
+
+          transaction.update(itemSnap.ref, {
+            isArchived: true,
+            "metadata.isArchived": true,
+            "metadata.updatedAt": txNow,
+          });
+        }
+
+        if (itemCountDeduct > 0 && fineSnap.exists()) {
+          const parentData = fineSnap.data() as StudentFines;
+          const nextCount = Math.max(
+            0,
+            Number(parentData.fineItemsCount ?? 0) - itemCountDeduct
+          );
+          const nextAccumulated = Math.max(
+            0,
+            Number(parentData.accumulatedAmount ?? 0) - accumulatedDeduct
+          );
+          const nextPaid = Math.max(
+            0,
+            Number(parentData.paidAmount ?? 0) - paidDeduct
+          );
+          const nextWaived = Math.max(
+            0,
+            Number(parentData.waivedAmount ?? 0) - waivedDeduct
+          );
+          const nextBalance = Math.max(
+            0,
+            nextAccumulated - nextPaid - nextWaived
+          );
+          const nextStatus = determineFineStatus({
+            activeItemCount: nextCount,
+            balance: nextBalance,
+            paidAmount: nextPaid,
+            waivedAmount: nextWaived,
+            hasPending:
+              parentData.status === FineStatus.PENDING && nextBalance > 0,
+          });
+
+          transaction.update(fineRef, {
+            fineItemsCount: nextCount,
+            accumulatedAmount: nextAccumulated,
+            paidAmount: nextPaid,
+            balance: nextBalance,
+            waivedAmount: nextWaived > 0 ? nextWaived : null,
+            status: nextStatus,
+            "metadata.updatedAt": txNow,
+          });
+        }
+      }
+
+      if (
+        statsRef &&
+        statsSnap?.exists() &&
+        (totalFinesDeduct > 0 ||
+          totalUnpaidDeduct > 0 ||
+          totalCollectedDeduct > 0)
+      ) {
+        applyFineStatsDeltaInTx(
+          transaction,
+          statsRef,
+          statsSnap,
+          {
+            customId: statsId!,
+            orgId: currentEvent.orgId!,
+            totalStudents: 0,
+          },
+          {
+            totalFinesDelta: -totalFinesDeduct,
+            totalUnpaidDelta: -totalUnpaidDeduct,
+            totalCollectedDelta: -totalCollectedDeduct,
+          }
+        );
+      }
+
+      transaction.update(eventDocRef, {
+        deletionHeartbeatAt: txNow,
+      });
+    });
+  }
+
+  // Archive any orphaned fineItems missing a parentId
+  for (let i = 0; i < orphanedItemRefs.length; i += 450) {
+    const batch = writeBatch(db);
+    for (const ref of orphanedItemRefs.slice(i, i + 450)) {
+      batch.update(ref, {
+        isArchived: true,
+        "metadata.isArchived": true,
+        "metadata.updatedAt": now,
+      });
+    }
+    await batch.commit();
+  }
+};
+
+/**
+ * Idempotently strips deleted event fineItem references from clearanceStatus and
+ * moves them to metadata.refundables on proofOfPayments across all event items
+ * (both active and already-archived from any prior interrupted run).
+ */
+const cleanupEventClearanceAndProofs = async (
+  currentEvent: Event,
+  allItemDocs: QueryDocumentSnapshot<DocumentData>[],
+  now: Timestamp
+) => {
+  const allRemovedItemIds = new Set<string>();
+  const affectedUserIds = new Set<string>();
+  const missingUserParentIds = new Set<string>();
+
+  for (const itemDoc of allItemDocs) {
+    allRemovedItemIds.add(itemDoc.id);
+    const data = itemDoc.data() as FineItem;
+    if (data.userId) {
+      affectedUserIds.add(data.userId);
+    } else {
+      const parentId = itemDoc.ref.parent.parent?.id || data.parentFineId || "";
+      if (parentId) missingUserParentIds.add(parentId);
+    }
+  }
+
+  if (missingUserParentIds.size > 0) {
+    const parentIds = Array.from(missingUserParentIds);
+    for (let i = 0; i < parentIds.length; i += 30) {
+      const chunk = parentIds.slice(i, i + 30);
+      const snap = await getDocsFromServer(
+        query(collection(db, "fines"), where(documentId(), "in", chunk))
+      );
+      snap.docs.forEach((d) => {
+        const userId = (d.data() as StudentFines).userId;
+        if (userId) affectedUserIds.add(userId);
+      });
+    }
+  }
+
+  const userIdList = Array.from(affectedUserIds);
+  const clearanceDocs: ClearanceStatus[] = [];
+  const proofDocs: ProofOfPayment[] = [];
+
+  for (let i = 0; i < userIdList.length; i += 30) {
+    const chunk = userIdList.slice(i, i + 30);
+    const [cSnap, pSnap] = await Promise.all([
+      getDocsFromServer(
+        query(collection(db, "clearanceStatus"), where("userId", "in", chunk))
+      ),
+      getDocsFromServer(
+        query(collection(db, "proofOfPayments"), where("userId", "in", chunk))
+      ),
+    ]);
+
+    cSnap.docs.forEach((d) => {
+      const data = d.data();
+      if (!currentEvent.orgId || data.orgId === currentEvent.orgId) {
+        clearanceDocs.push({ id: d.id, ...data } as ClearanceStatus);
+      }
+    });
+    pSnap.docs.forEach((d) => {
+      const data = d.data();
+      if (!currentEvent.orgId || data.orgId === currentEvent.orgId) {
+        proofDocs.push({ id: d.id, ...data } as ProofOfPayment);
+      }
+    });
+  }
+
+  let batch = writeBatch(db);
+  let operationCount = 0;
+  const batchPromises: Promise<void>[] = [];
+
+  const flushBatch = () => {
+    if (operationCount > 0) {
+      batchPromises.push(batch.commit());
+      batch = writeBatch(db);
+      operationCount = 0;
+    }
+  };
+
+  for (const clearance of clearanceDocs) {
+    const currentBlocking = { ...(clearance.blockingItems ?? {}) } as Record<
+      string,
+      any
+    >;
+    const matchedIds = Object.keys(currentBlocking).filter((key) =>
+      allRemovedItemIds.has(key)
+    );
+    if (matchedIds.length === 0) continue;
+
+    const updatePayload: Record<string, any> = { updatedAt: now };
+    for (const id of matchedIds) {
+      delete currentBlocking[id];
+      updatePayload[`blockingItems.${id}`] = deleteField();
+    }
+    const nextClearanceStatus =
+      deriveClearanceStatusFromBlockingItems(currentBlocking);
+    updatePayload.status = nextClearanceStatus;
+    updatePayload.clearanceDate =
+      nextClearanceStatus === "cleared" ? now : null;
+
+    batch.update(doc(db, "clearanceStatus", clearance.id), updatePayload);
+    operationCount++;
+    if (operationCount === 450) flushBatch();
+  }
+
+  for (const proof of proofDocs) {
+    const items = proof.metadata?.items ?? [];
+    const matchingItems = items.filter((i) => allRemovedItemIds.has(i.refId));
+    if (matchingItems.length === 0) continue;
+
+    const paymentRef = doc(db, "proofOfPayments", proof.id!);
+    const archiveProof = items.length === matchingItems.length;
+    batch.update(paymentRef, {
+      "metadata.items": arrayRemove(...matchingItems),
+      "metadata.refundables": arrayUnion(...matchingItems),
+      ...(archiveProof ? { isArchived: true } : {}),
+    });
+    operationCount++;
+    if (operationCount === 450) flushBatch();
+  }
+
+  flushBatch();
+  await Promise.all(batchPromises);
+};
+
 export const deleteEvent = async (eventId: string) => {
   try {
-    // Verify the event belongs to the current faculty before deleting
-    const currentEvent = await getEventById(eventId);
-    if (!currentEvent) {
+    const eventDocRef = doc(db, "events", eventId);
+    const eventSnap = await getDocFromServer(eventDocRef);
+    if (!eventSnap.exists()) {
       throw new Error(
         "Event not found or you don't have permission to delete it"
       );
     }
 
-    const eventDoc = doc(db, "events", eventId);
-    await updateDoc(eventDoc, { isDeleted: true }); // Soft delete
-
-    // If fines were generated for this event, we need to handle them accordingly
-    if (currentEvent.finesGenerated) {
-      const subCollectionGroupRef = collectionGroup(db, "fineItems");
-      const q = query(subCollectionGroupRef, where("eventId", "==", eventId));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        console.log("No fineItems documents found.");
-        return;
-      }
-
-      let batch = writeBatch(db);
-      let operationCount = 0;
-      const batchPromises = [];
-
-      //helper variables to hold for updating fines and clearances after each queries
-      const fineRef: { parent: string, fineItem: FineItem, isPaid: boolean, isWaived: boolean }[] = [];
-      const clearancesToUpdate: { clearance: ClearanceStatus, fineItem: FineItem, parentFineId: string }[] = [];
-      const payments: { proof: ProofOfPayment, refId:string }[] = [];
-
-      //Archive all fineItems related to the event
-      querySnapshot.forEach((doc) => {
-        batch.update(doc.ref, {
-          isArchived: true,
-          "metadata.isArchived": true,
-          "metadata.updatedAt": Timestamp.now(),
-        });
-        operationCount++;
-
-        fineRef.push({ parent: doc.ref.parent.parent?.id || "", fineItem: { id: doc.id, ...doc.data() } as FineItem, isPaid: doc.data().isPaid, isWaived: doc.data().isWaived });
-       
-        if (operationCount === 500) {
-          batchPromises.push(batch.commit());
-          batch = writeBatch(db);
-          operationCount = 0;
-        }
-      });
-
-      if (operationCount > 0) {
-        batchPromises.push(batch.commit());
-      }
-      await Promise.all(batchPromises);
-      console.log("Successfully updated all fineItem documents!");
-      console.log(fineRef.length);
-      
-      batchPromises.length = 0;
-      batch = writeBatch(db);
-      operationCount = 0;
-
-      // For each fineItem, if it's not paid or waived, we need to recalculate the fine and update stats.
-      //If it's paid but not waived, we only update stats. 
-      const batchPromises2 = [];
-      for (const ref of fineRef) {
-        let amount = ref.fineItem.amount;
-        if (!ref.isPaid && !ref.isWaived) {
-          batchPromises2.push(recalculateFines(ref.parent, 0, 0, true, amount));
-          batchPromises2.push(updateFineStats(`${currentEvent.academicYear!}-${currentEvent.semester!}-${currentEvent.orgId}`, 0, 0, amount))
-        }
-        if (ref.isPaid && !ref.isWaived) {
-          batchPromises2.push(updateDoc(doc(db, "stats", `${currentEvent.academicYear!}-${currentEvent.semester!}-${currentEvent.orgId}`), {
-            totalCollectedFines: increment(0 - (amount)),
-            totalFines: increment(0-(amount))
-          }))
-          amount = 0;
-        }
-          batch.update(doc(db, "fines", ref.parent), {
-          fineItemsCount: increment(-1),
-          accumulatedAmount: increment(0 - amount),
-          "metadata.updatedAt": Timestamp.now(),
-        });
-        operationCount++;
-        
-        if (operationCount === 500) {
-          batchPromises.push(batch.commit());
-          batch = writeBatch(db);
-          operationCount = 0;
-        }
-
-        const clearanceQuery = query(collection(db, "clearanceStatus"), where(`blockingItems.${ref.fineItem.id}`, "!=", null));
-        const snapshot = await getDocs(clearanceQuery);
-        clearancesToUpdate.push({ clearance: snapshot.docs[0].data() as ClearanceStatus, fineItem: ref.fineItem, parentFineId: ref.parent });
-      }
-      if (operationCount > 0) {
-        console.log("committing",operationCount)
-        batchPromises.push(batch.commit());
-        batch = writeBatch(db);
-        operationCount = 0;
-      }
-      await Promise.all(batchPromises2);
-
-      //Remove the fineItem from any clearance blockingItems 
-      for (const item of clearancesToUpdate) {
-        const docRef = doc(db, "clearanceStatus", item.clearance.id);
-        batch.update(docRef, {
-          [`blockingItems.${item.fineItem.id}`]: deleteField(),
-          updatedAt: Timestamp.now()
-        })
-        operationCount++;
-        if (operationCount === 500) {
-          batchPromises.push(batch.commit());
-          batch = writeBatch(db);
-          operationCount = 0;
-        } 
-        
-        const snapshot = await getDocs(query(collection(db, "proofOfPayments"),
-          where("orgId", "==", currentEvent.orgId), where("userId", "==", item.clearance.userId),
-          where("academicYear", "==", currentEvent.academicYear), where("semester", "==", currentEvent.semester),limit(1)));
-        if(snapshot.empty) continue;
-        const proofOfPayment = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProofOfPayment));
-        payments.push({ proof: proofOfPayment[0], refId: item.fineItem.id });
-
-      }
-      if (operationCount > 0) {
-        batchPromises.push(batch.commit());
-      }
-
-      await Promise.all(batchPromises);
-      console.log("Successfully updated all clearance documents!");
-
-      batchPromises.length = 0;
-      batch = writeBatch(db);
-      operationCount = 0;
-
-      //Separate to ensure clearances are updated before recalculation also because I did not use transaction method hehe
-      for(const item of clearancesToUpdate){
-        batchPromises.push(recalculateClearanceStatus(item.clearance.userId, { AY: currentEvent.academicYear, semester: currentEvent.semester }));
-      }
-
-      //Remove payments done from items but keep it as refundables under metadata in case of refund requests on ghost events due to deletion
-      for (const payment of payments) {
-        const paymentRef = doc(db, "proofOfPayments", payment.proof.id!);
-        const paymentToRemove = payment.proof.metadata.items?.find(i => i.refId === payment.refId);
-
-        if (paymentToRemove) {
-          if (payment.proof.metadata.items!.length === 1) {
-            batch.update(paymentRef, {
-              "metadata.items": arrayRemove(paymentToRemove),
-              "metadata.refundables": arrayUnion(paymentToRemove),
-              isArchived: true,
-            })
-            operationCount++;
-          }
-          else {
-            batch.update(paymentRef, {
-              "metadata.items": arrayRemove(paymentToRemove),
-              "metadata.refundables": arrayUnion(paymentToRemove)
-            })
-            operationCount++;
-          }
-          if (operationCount === 500) {
-            batchPromises.push(batch.commit());
-            batch = writeBatch(db);
-            operationCount = 0;
-          }
-        }
-      }
-      if (operationCount > 0) {
-        batchPromises.push(batch.commit());
-      }
-
-      await Promise.all(batchPromises);
-      console.log("Successfully updated all payments!");
-
+    const rawEventData = eventSnap.data();
+    if (rawEventData?.isDeleted === true) {
+      invalidateEventDeletionCaches(eventId);
+      return;
     }
 
-    // Invalidate specific event cache and all paginated events
-    cacheService.invalidate(`event:${eventId}`);
-    cacheService.invalidateByPrefix("events:");
-    cacheService.invalidateByPrefix("ui:events:view:");
+    const currentEvent = transformEventData({
+      id: eventSnap.id,
+      data: () => rawEventData,
+    });
+
+    if (isFineGenerationInProgress(currentEvent)) {
+      throw new Error(
+        "Cannot delete event while fine generation is in progress. Please wait for it to finish."
+      );
+    }
+
+    await updateDoc(eventDocRef, {
+      deletionStatus: "deleting",
+      deletionHeartbeatAt: Timestamp.now(),
+    });
+
+    try {
+      const subCollectionGroupRef = collectionGroup(db, "fineItems");
+      const q = query(subCollectionGroupRef, where("eventId", "==", eventId));
+      const querySnapshot = await getDocsFromServer(q);
+      const allItemDocs = querySnapshot.docs;
+
+      if (allItemDocs.length > 0) {
+        const now = Timestamp.now();
+        const activeItemDocs = allItemDocs.filter((d) =>
+          isActiveFineItem(d.data() as Record<string, unknown>)
+        );
+
+        if (activeItemDocs.length > 0) {
+          await archiveEventFineItemsChunked(
+            eventDocRef,
+            currentEvent,
+            activeItemDocs,
+            now
+          );
+        }
+
+        await cleanupEventClearanceAndProofs(currentEvent, allItemDocs, now);
+      }
+
+      // Mark the event as soft-deleted only AFTER all fine/clearance/stats cleanups succeed
+      await updateDoc(eventDocRef, {
+        isDeleted: true,
+        deletionStatus: "completed",
+        deletionHeartbeatAt: Timestamp.now(),
+      });
+
+      invalidateEventDeletionCaches(eventId);
+    } catch (innerError) {
+      await updateDoc(eventDocRef, {
+        deletionStatus: "failed",
+        deletionHeartbeatAt: Timestamp.now(),
+      }).catch(() => {});
+      throw innerError;
+    }
   } catch (error) {
     handleFirestoreError(error, `delete event with ID ${eventId}`);
   }
 };
 
-export const completeEvent = async (eventId: string) => { 
+export const completeEvent = async (eventId: string) => {
   try {
     const eventDoc = doc(db, "events", eventId);
     await updateDoc(eventDoc, { status: "completed", manuallyCompleted: true });
 
-    // Invalidate specific event cache and all paginated events
     cacheService.invalidate(`event:${eventId}`);
     cacheService.invalidateByPrefix("events:");
     cacheService.invalidateByPrefix("ui:events:view:");
   } catch (error) {
     console.error(`Error updating status for event ${eventId}:`, error);
   }
-}
+};
 
 // Convenience methods with caching
 export const getOngoingEvents = async (): Promise<Event[]> => {

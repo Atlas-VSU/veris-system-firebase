@@ -1,84 +1,138 @@
-
 import { FineItem, StudentFines } from "@/features/organization/fines/types";
 import { Member, MemberData } from "@/features/organization/members/types";
 import { db } from "@/firebase/firebase.config";
 import { getCurrentUserData } from "@/firebase/users";
-import { collection, query, where, getDocs, CollectionReference, DocumentData, DocumentSnapshot, orderBy, limit, startAfter, getCountFromServer, getDoc, doc, onSnapshot, connectFirestoreEmulator, or, and } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  getDocsFromServer,
+  CollectionReference,
+  DocumentData,
+  orderBy,
+  limit,
+  startAfter,
+  getCountFromServer,
+  getDoc,
+  doc,
+  onSnapshot,
+  or,
+  and,
+  documentId,
+} from "firebase/firestore";
 import { cacheService, CACHE_KEYS, CACHE_DURATIONS } from "@/services/cacheService";
 import { getActiveTerm } from "@/firebase/term";
 import { Term } from "@/constants/types";
 
 const finesCollection: CollectionReference<DocumentData> = collection(
-    db,
-    "fines"
-  );
+  db,
+  "fines"
+);
 
-  // Centralized error handler
+// Centralized error handler
 const handleFirestoreError = (error: any, context: string) => {
-    console.error(`Error ${context}:`, error);
-    // Re-throwing allows the calling UI to handle the failed state.
-    throw new Error(`Failed to ${context}.`);
-  };
+  console.error(`Error ${context}:`, error);
+  // Re-throwing allows the calling UI to handle the failed state.
+  throw new Error(`Failed to ${context}.`);
+};
+
+const hashStudentIds = (
+  orgId: string,
+  term: { AY: string; semester: string },
+  studentIds: string[]
+): string => {
+  const input = `${orgId}:${term.AY}:${term.semester}:${studentIds.join(",")}`;
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return `${orgId}:${term.AY}:${term.semester}:${studentIds.length}:${(h >>> 0).toString(36)}`;
+};
+
+export const getFinesByStudentsFromServer = async (
+  students: MemberData[],
+  orgIdOverride?: string,
+  termOverride?: { AY: string; semester: string }
+): Promise<StudentFines[]> => {
+  const studentIds = Array.from(
+    new Set(students.map((s) => s.member?.studentId).filter(Boolean))
+  ).sort();
+
+  if (studentIds.length === 0) return [];
+
+  const term = termOverride || (await getActiveTerm());
+  const orgId =
+    orgIdOverride || ((await getCurrentUserData()) as unknown as Member)?.orgId;
+
+  if (!term || !orgId) return [];
+
+  try {
+    // Chunk into groups of 15 because the query combines studentId IN (15) with semester OR (2) => 30 disjunctions max.
+    const CHUNK_SIZE = 15;
+    const PARALLEL_LIMIT = 20;
+
+    const chunks: string[][] = [];
+    for (let i = 0; i < studentIds.length; i += CHUNK_SIZE) {
+      chunks.push(studentIds.slice(i, i + CHUNK_SIZE));
+    }
+
+    const fineDocs: StudentFines[] = [];
+    for (let i = 0; i < chunks.length; i += PARALLEL_LIMIT) {
+      const group = chunks.slice(i, i + PARALLEL_LIMIT);
+      const snapshots = await Promise.all(
+        group.map((chunk) =>
+          getDocsFromServer(
+            query(
+              finesCollection,
+              and(
+                where("studentId", "in", chunk),
+                where("metadata.isArchived", "==", false),
+                where("academicYear", "==", term.AY),
+                where("orgId", "==", orgId),
+                or(
+                  where("semester", "==", term.semester),
+                  where("semester", "==", `${term.semester} Semester`)
+                )
+              )
+            )
+          )
+        )
+      );
+
+      snapshots
+        .flatMap((snapshot) => snapshot.docs)
+        .forEach((docSnap) => {
+          fineDocs.push({ id: docSnap.id, ...docSnap.data() } as StudentFines);
+        });
+    }
+
+    return fineDocs;
+  } catch (error) {
+    handleFirestoreError(error, `fetching fine documents from server for student IDs`);
+    return [];
+  }
+};
 
 export const getFinesByStudents = async (students: MemberData[]) => {
-  const studentIds = students.map(s => s.member.studentId).sort();
+  const studentIds = Array.from(
+    new Set(students.map(s => s.member?.studentId).filter(Boolean))
+  ).sort();
 
   if (studentIds.length === 0) return [];
 
   const term = await getActiveTerm();
   const currUser = await getCurrentUserData() as unknown as Member;
+  if (!term || !currUser?.orgId) return [];
 
-  // Simple hash for the student IDs to use as a cache key
-  const hash = studentIds.join(',').length + studentIds.reduce((acc, id) => acc + id.split('').reduce((a, c) => a + c.charCodeAt(0), 0), 0);
-  const cacheKey = CACHE_KEYS.finesBatch(hash.toString());
+  const cacheKey = CACHE_KEYS.finesBatch(
+    hashStudentIds(currUser.orgId, term, studentIds)
+  );
 
   return cacheService.getOrFetch(
     cacheKey,
-    async () => {
-      try {
-        // ── Chunk into groups of 30 (Firebase "in" limit) ──────────────────────
-        const CHUNK_SIZE    = 15;
-        const PARALLEL_LIMIT = 20; // max concurrent Firestore requests at a time
-
-        const chunks: string[][] = [];
-        for (let i = 0; i < studentIds.length; i += CHUNK_SIZE) {
-          chunks.push(studentIds.slice(i, i + CHUNK_SIZE));
-        }
-
-        const fineDocs: StudentFines[] = [];
-        for (let i = 0; i < chunks.length; i += PARALLEL_LIMIT) {
-          const group = chunks.slice(i, i + PARALLEL_LIMIT);
-          const snapshots = await Promise.all(
-            group.map(chunk =>
-              getDocs(query(
-                finesCollection,
-                and(
-                  where("studentId", "in", chunk),
-                  where("metadata.isArchived", "==", false),
-                  where("academicYear", "==", term!.AY),
-                  where("orgId", "==", currUser.orgId),
-                  or(
-                    where("semester", "==", term!.semester),
-                    where("semester", "==", `${term!.semester} Semester`) //THIS IS TEMPORARY SINCE SOME DOCUMENTS HAVE SEMESTER FORMATTED AS "2ND Semester" INSTEAD OF "2ND" (CAN BE SOLVED WHEN WE UPDATE THE SEMESTER FIELD OF ALL DOCUMENTS TO BE CONSISTENT SORRY FOR THIS)
-                  )
-                )
-              ))
-            )
-          );
-
-          snapshots
-            .flatMap(snapshot => snapshot.docs)
-            .forEach(doc => {
-              fineDocs.push({ id: doc.id, ...doc.data() } as StudentFines);
-            });
-        }
-
-        return fineDocs;
-      } catch (error) {
-        handleFirestoreError(error, `fetching fine documents for student IDs`);
-        return [];
-      }
-    },
+    async () => getFinesByStudentsFromServer(students, currUser.orgId, term),
     CACHE_DURATIONS.FINES
   );
 };
@@ -321,8 +375,7 @@ export const fetchFinesPaginated = async (
         where("semester", "==", `${term!.semester} Semester`)
       )
     ),
-    ...constraints2,
-    limit(9)
+    ...constraints2
   );
   const snapshot = await getDocs(q);
 
@@ -413,19 +466,27 @@ export const subscribeFines = (
 };
 
  
-export const getFineItemsByIds = async (fineId:string, fineItemIds: string[]) => {
-  const hash = fineItemIds.sort().join(',');
+export const getFineItemsByIds = async (fineId: string, fineItemIds: string[]) => {
+  if (!fineId || !fineItemIds.length) return [];
+  const sortedIds = Array.from(new Set(fineItemIds)).sort();
+  const hash = sortedIds.join(",");
   return cacheService.getOrFetch(
     `fines:items:subset:${fineId}:${hash}`,
     async () => {
       try {
         const colRef = collection(db, "fines", fineId, "fineItems");
-        const q = query(colRef, where("id", "in", fineItemIds));
-        const snapshot = await getDocs(q);
-        if (snapshot.empty) {
-          return [];
+        const chunks: string[][] = [];
+        for (let i = 0; i < sortedIds.length; i += 30) {
+          chunks.push(sortedIds.slice(i, i + 30));
         }
-        return snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as FineItem[];
+        const snapshots = await Promise.all(
+          chunks.map((chunk) =>
+            getDocs(query(colRef, where(documentId(), "in", chunk)))
+          )
+        );
+        return snapshots
+          .flatMap((snap) => snap.docs)
+          .map((d) => ({ id: d.id, ...d.data() })) as FineItem[];
       } catch (error) {
         handleFirestoreError(error, "Fetching all fine items for a student");
         return [];
@@ -433,11 +494,12 @@ export const getFineItemsByIds = async (fineId:string, fineItemIds: string[]) =>
     },
     CACHE_DURATIONS.FINES
   );
-}
+};
 
 export const checkFineSeededForTerm = async (orgId: string, term: { AY: string; semester: string }) => {
   const doneSeeding = await getDocs(query(collection(db, "fines",),
   where("orgId", "==", orgId),
+  where("metadata.isArchived", "==", false),
   where("academicYear", "==", term!.AY),
   where("semester", "==", term!.semester),
   limit(1)));

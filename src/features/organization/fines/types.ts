@@ -1,4 +1,3 @@
-
 import { Timestamp } from "firebase/firestore";
 import type {
   OnSeedProgress,
@@ -114,8 +113,20 @@ export type FineItem = {
   appealResolvedAt?: Timestamp;
   isPaid: boolean;
   isPending?: boolean;
+  isArchived?: boolean;
   academicYear?: string;
   semester?: string;
+  fineTypeId?: string;
+  parentFineId?: string;
+  userId?: string;
+  studentId?: string;
+  userName?: string;
+  orgId?: string;
+  metadata?: {
+    createdAt?: Timestamp;
+    updatedAt?: Timestamp;
+    isArchived?: boolean;
+  };
 }
 
 // Add "clearance" to your phase type
@@ -133,8 +144,17 @@ export type FineGenerationProgress = {
   absentDone: number;
   partialTotal: number;
   partialDone: number;
+  skippedAlreadyFined?: number;
 
   // Human-readable status line for the UI log
+  message: string;
+};
+
+export type FineGenerationResult = {
+  status: "done" | "error";
+  absentCommitted: number;
+  partialCommitted: number;
+  skippedAlreadyFined: number;
   message: string;
 };
 
@@ -159,6 +179,3 @@ export type BulkFinesResult = {
 };
 
 export type StudentFineStatus = "unpaid" | "partial" | "paid" | "pending" | "waived";
-
-
-

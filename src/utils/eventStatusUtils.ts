@@ -1,4 +1,7 @@
 import { Event } from "@/features/organization/events/types";
+import { timestampToMillis } from "@/features/organization/fines/utils/fineComputations";
+
+const JOB_LEASE_MS = 120_000;
 
 /**
  * Determines the status of an event based on its date
@@ -50,4 +53,17 @@ export function getEventsNeedingStatusUpdate(events: Event[]): Event[] {
 
     return currentStatus !== correctStatus;
   });
+}
+
+export function isFineGenerationInProgress(event: Partial<Event> | null | undefined): boolean {
+  if (!event || event.finesGenerated) return false;
+  if (event.fineGenerationStatus !== "generating") return false;
+  const heartbeatMs = timestampToMillis(event.fineGenerationHeartbeatAt);
+  return heartbeatMs !== null && Date.now() - heartbeatMs < JOB_LEASE_MS;
+}
+
+export function isFineGenerationInterrupted(event: Partial<Event> | null | undefined): boolean {
+  if (!event || event.finesGenerated) return false;
+  if (event.fineGenerationStatus === "failed") return true;
+  return event.fineGenerationStatus === "generating" && !isFineGenerationInProgress(event);
 }

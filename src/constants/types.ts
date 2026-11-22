@@ -31,4 +31,5 @@ export type Organization = {
   programId?: string,
   accessLevel: number,
   orgLogoUrl?: string,
+  isAcceptingPayments?: boolean,
 }

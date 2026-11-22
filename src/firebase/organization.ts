@@ -1,6 +1,6 @@
 import { Organization, Term } from "@/constants/types";
 import { db } from "@/firebase/firebase.config";
-import { collection, addDoc, Timestamp, updateDoc, doc, getDocs, CollectionReference, DocumentData, query, where, getDoc } from "firebase/firestore";
+import { collection, addDoc, Timestamp, serverTimestamp, updateDoc, doc, getDocs, CollectionReference, DocumentData, query, where, getDoc } from "firebase/firestore";
 
 
 const orgCollection: CollectionReference<DocumentData> = collection(
@@ -149,7 +149,7 @@ export const updateOrgPaymentAcceptance = async (
         const orgRef = doc(orgCollection, orgId);
         await updateDoc(orgRef, {
             isAcceptingPayments,
-            "metadata.updatedAt": Timestamp.now(),
+            "metadata.updatedAt": serverTimestamp(),
         });
         return true;
     } catch (error) {

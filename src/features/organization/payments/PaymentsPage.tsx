@@ -158,28 +158,42 @@ export default function PaymentsPage() {
                   Portal Payments
                 </span>
                 <Badge
-                  variant={isAcceptingPayments ? "default" : "secondary"}
+                  variant={isAcceptingPayments === true ? "default" : "secondary"}
                   className={
-                    isAcceptingPayments
+                    isLoadingPaymentAcceptance
                       ? "h-5 px-2 text-[10px] font-bold uppercase"
-                      : "h-5 border-amber-300 bg-amber-100 px-2 text-[10px] font-bold uppercase text-amber-800 dark:border-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                      : isAcceptingPayments === true
+                        ? "h-5 px-2 text-[10px] font-bold uppercase"
+                        : isAcceptingPayments === false
+                          ? "h-5 border-amber-300 bg-amber-100 px-2 text-[10px] font-bold uppercase text-amber-800 dark:border-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                          : "h-5 border-destructive/30 bg-destructive/10 px-2 text-[10px] font-bold uppercase text-destructive"
                   }
                 >
-                  {isAcceptingPayments ? "Accepting" : "Paused"}
+                  {isLoadingPaymentAcceptance
+                    ? "Loading…"
+                    : isAcceptingPayments === true
+                      ? "Accepting"
+                      : isAcceptingPayments === false
+                        ? "Paused"
+                        : "Unavailable"}
                 </Badge>
               </div>
               <span className="text-[11px] text-muted-foreground">
-                {isAcceptingPayments
-                  ? "Students can submit online payments"
-                  : "Online submissions are disabled"}
+                {isLoadingPaymentAcceptance
+                  ? "Checking portal payment status…"
+                  : isAcceptingPayments === true
+                    ? "Students can submit online payments"
+                    : isAcceptingPayments === false
+                      ? "Online submissions are disabled"
+                      : "Could not load portal payment status"}
               </span>
             </div>
-            {isUpdatingPaymentAcceptance ? (
+            {isUpdatingPaymentAcceptance || isLoadingPaymentAcceptance ? (
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             ) : (
               <Switch
-                checked={isAcceptingPayments}
-                disabled={isLoadingPaymentAcceptance || isUpdatingPaymentAcceptance}
+                checked={isAcceptingPayments === true}
+                disabled={isLoadingPaymentAcceptance || isUpdatingPaymentAcceptance || isAcceptingPayments === null}
                 onCheckedChange={(checked) => {
                   setPendingToggleValue(checked)
                   setConfirmToggleOpen(true)
@@ -191,7 +205,7 @@ export default function PaymentsPage() {
         }
       />
 
-      {!isLoadingPaymentAcceptance && !isAcceptingPayments && (
+      {!isLoadingPaymentAcceptance && isAcceptingPayments === false && (
         <Alert className="border-amber-300 bg-amber-50/90 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
           <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <AlertTitle className="font-bold text-amber-900 dark:text-amber-200">

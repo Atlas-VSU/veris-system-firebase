@@ -79,7 +79,7 @@ export function usePaymentsPage() {
   const [student, setStudent] = useState<Member|null>(null)
 
   // ── Student Portal Payment Acceptance ─────────────────────────────────────
-  const [isAcceptingPayments, setIsAcceptingPayments] = useState<boolean>(true)
+  const [isAcceptingPayments, setIsAcceptingPayments] = useState<boolean | null>(null)
   const [isLoadingPaymentAcceptance, setIsLoadingPaymentAcceptance] = useState<boolean>(true)
   const [isUpdatingPaymentAcceptance, setIsUpdatingPaymentAcceptance] = useState<boolean>(false)
 
@@ -92,12 +92,20 @@ export function usePaymentsPage() {
     setIsLoadingPaymentAcceptance(true)
     getOrgById(orgId)
       .then((org) => {
-        if (!cancelled && org) {
+        if (cancelled) return
+        if (org) {
           setIsAcceptingPayments(org.isAcceptingPayments !== false)
+        } else {
+          setIsAcceptingPayments(null)
+          toast.error("Could not verify student portal payment status.")
         }
       })
       .catch((err) => {
         console.error("Error fetching org payment status:", err)
+        if (!cancelled) {
+          setIsAcceptingPayments(null)
+          toast.error("Failed to load student portal payment status.")
+        }
       })
       .finally(() => {
         if (!cancelled) setIsLoadingPaymentAcceptance(false)
@@ -108,6 +116,10 @@ export function usePaymentsPage() {
   }, [user?.orgId, currentOrgIdRef])
 
   const handleTogglePaymentAcceptance = useCallback(async (nextState: boolean) => {
+    if (!user?.role || !["admin", "super-admin"].includes(user.role)) {
+      toast.error("Organization administrator access is required")
+      return false
+    }
     const orgId = user?.orgId || currentOrgIdRef.current
     if (!orgId) {
       toast.error("Organization not found")
@@ -130,7 +142,7 @@ export function usePaymentsPage() {
     } finally {
       setIsUpdatingPaymentAcceptance(false)
     }
-  }, [user?.orgId, currentOrgIdRef])
+  }, [user?.role, user?.orgId, currentOrgIdRef])
 
   // ── Sync payments into local state ───────────────────────────────────────
   useEffect(() => { setPaymentsList(payments) }, [payments])

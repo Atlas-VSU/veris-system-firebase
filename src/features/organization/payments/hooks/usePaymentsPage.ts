@@ -20,7 +20,7 @@ import { Timestamp } from "firebase/firestore"
 import { BlockingItem, ClearanceStatus } from "../../clearance/types"
 import { useTermPeriod } from "../../term/hooks/useTermPeriod"
 import { useAuth } from "@/hooks/useAuth"
-import { getOrgById } from "@/firebase/organization"
+import { getOrgById, updateOrgPaymentAcceptance } from "@/firebase/organization"
 
 export function usePaymentsPage() {
   const { user } = useAuth()
@@ -78,7 +78,59 @@ export function usePaymentsPage() {
   const [studentProgram, setStudentProgram] = useState<Program|null>(null)
   const [student, setStudent] = useState<Member|null>(null)
 
+  // ── Student Portal Payment Acceptance ─────────────────────────────────────
+  const [isAcceptingPayments, setIsAcceptingPayments] = useState<boolean>(true)
+  const [isLoadingPaymentAcceptance, setIsLoadingPaymentAcceptance] = useState<boolean>(true)
+  const [isUpdatingPaymentAcceptance, setIsUpdatingPaymentAcceptance] = useState<boolean>(false)
+
   const { _approvePayment, _rejectPayment } = usePaymentApproval()
+
+  useEffect(() => {
+    const orgId = user?.orgId || currentOrgIdRef.current
+    if (!orgId) return
+    let cancelled = false
+    setIsLoadingPaymentAcceptance(true)
+    getOrgById(orgId)
+      .then((org) => {
+        if (!cancelled && org) {
+          setIsAcceptingPayments(org.isAcceptingPayments !== false)
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching org payment status:", err)
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingPaymentAcceptance(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [user?.orgId, currentOrgIdRef])
+
+  const handleTogglePaymentAcceptance = useCallback(async (nextState: boolean) => {
+    const orgId = user?.orgId || currentOrgIdRef.current
+    if (!orgId) {
+      toast.error("Organization not found")
+      return false
+    }
+    setIsUpdatingPaymentAcceptance(true)
+    try {
+      await updateOrgPaymentAcceptance(orgId, nextState)
+      setIsAcceptingPayments(nextState)
+      toast.success(
+        nextState
+          ? "Student portal payments enabled"
+          : "Student portal payments temporarily disabled"
+      )
+      return true
+    } catch (error) {
+      console.error("Error updating payment acceptance:", error)
+      toast.error("Failed to update student portal payment status. Please try again.")
+      return false
+    } finally {
+      setIsUpdatingPaymentAcceptance(false)
+    }
+  }, [user?.orgId, currentOrgIdRef])
 
   // ── Sync payments into local state ───────────────────────────────────────
   useEffect(() => { setPaymentsList(payments) }, [payments])
@@ -374,5 +426,9 @@ export function usePaymentsPage() {
     refetchPayments,refetchUnpaids, refreshAll, totalUnpaidCount, totalSubmissionCount,
     submissionPage, setSubmissionPage, searchCount,
     AY, sem,
+    isAcceptingPayments,
+    isLoadingPaymentAcceptance,
+    isUpdatingPaymentAcceptance,
+    handleTogglePaymentAcceptance,
   }
 }
